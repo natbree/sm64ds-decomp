@@ -30,15 +30,31 @@ the ROM's data/assets.
 ## Status
 
 - [x] Repo scaffolded
-- [ ] Toolchain: `ndspy`, `capstone` (Python) — ROM unpack + disassembly
-- [ ] Milestone 1: unpack ROM, identify ARM9 + overlays, dump first real functions
-- [ ] Milestone 2: identify the original compiler (critical for matching)
-- [ ] Milestone 3: first byte-matching function, end to end
+- [x] Toolchain: `ndspy`, `capstone`, `pyelftools` (Python) + `dsd` analysis
+- [x] Milestone 1: unpack ROM, identify ARM9 + overlays, dump real functions
+- [x] Milestone 2: original compiler pinned — **mwccarm `1.2/sp2p3`**
+- [x] Milestone 3: byte-matching functions landing, end to end
+- [ ] The long grind: ~11,390 functions to match (in progress)
+
+## Building / toolchain setup
+
+You supply your own cartridge dump; the repo holds only original work. To get set up
+(Python deps, the proprietary `mwccarm` compiler from the DS-decomp Discord, the `dsd`
+toolkit, and ROM unpacking), see **[CONTRIBUTING.md](CONTRIBUTING.md)** and
+**[notes/setup-mwccarm.md](notes/setup-mwccarm.md)**.
 
 ## Workflow (the loop)
 
 1. Unpack ROM -> ARM9 / ARM7 / overlays / filesystem (`tools/unpack.py`)
 2. Disassemble a region to ARM (`tools/disasm.py`)
 3. Hand-write C for one function
-4. Compile with the matching toolchain, diff bytes against the ROM
+4. Compile with mwccarm and byte-diff against the ROM, relocation-aware (`tools/match.py`)
 5. Iterate until identical, then move to the next function
+
+## Contributing & contact
+
+Help is welcome — every matched function counts. See **[CONTRIBUTING.md](CONTRIBUTING.md)**
+for setup and the matching loop.
+
+- **Discord: `beansntoast`** — DM me to claim work or ask questions.
+- Or open an issue to claim a function/area so we don't double up.
