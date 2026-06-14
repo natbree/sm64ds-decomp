@@ -58,3 +58,9 @@ for setup and the matching loop.
 
 - **Discord: `beansntoast`** — DM me to claim work or ask questions.
 - Or open an issue to claim a function/area so we don't double up.
+
+## License
+
+The original work in this repo (hand-written C, scripts, notes) is released under the
+**MIT License** — see [LICENSE](LICENSE). This applies only to our own code; it grants
+no rights to any Nintendo material, which is not present here.
