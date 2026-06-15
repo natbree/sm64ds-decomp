@@ -1,0 +1,53 @@
+extern int _ZN13SharedFilePtr7ReleaseEv();
+extern int func_0201791c();
+extern int func_02017984();
+extern int func_02017ab4();
+extern int _ZN18TextureTransformerD1Ev();
+extern int _ZN15TextureSequenceD1Ev();
+extern int _ZN5ModelD1Ev();
+extern int _ZN14BlendModelAnimD1Ev();
+
+int func_ov006_020c3288(char *t)
+{
+    _ZN13SharedFilePtr7ReleaseEv(t + 0xf0);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0xf8);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0x100);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0x108);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0x110);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0x118);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0x120);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0x128);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0x130);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0x138);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0x140);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0x148);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0x150);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0x158);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0x160);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0x168);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0x170);
+    _ZN13SharedFilePtr7ReleaseEv(t + 0x178);
+    func_0201791c(t + 0x178);
+    func_0201791c(t + 0x170);
+    func_0201791c(t + 0x168);
+    func_0201791c(t + 0x160);
+    func_0201791c(t + 0x158);
+    func_0201791c(t + 0x150);
+    func_0201791c(t + 0x148);
+    func_0201791c(t + 0x140);
+    func_02017984(t + 0x138);
+    func_02017984(t + 0x130);
+    func_02017984(t + 0x128);
+    func_02017984(t + 0x120);
+    func_02017984(t + 0x118);
+    func_02017984(t + 0x110);
+    func_02017984(t + 0x108);
+    func_02017984(t + 0x100);
+    func_02017ab4(t + 0xf8);
+    func_02017ab4(t + 0xf0);
+    _ZN18TextureTransformerD1Ev(t + 0xdc);
+    _ZN15TextureSequenceD1Ev(t + 0xc8);
+    _ZN5ModelD1Ev(t + 0x78);
+    _ZN14BlendModelAnimD1Ev(t + 0x8);
+    return (int)t;
+}

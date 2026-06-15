@@ -10,12 +10,12 @@ from the dsd toolkit's community section: https://github.com/AetiasHax/ds-decomp
 (pokediamond/pokeheartgold) have the same pinned files.
 
 ## What to grab (from the pinned messages)
-1. **`mwccarm.zip`** — the whole set of CodeWarrior ARM compiler versions. It contains
+1. **`mwccarm.zip`**, the whole set of CodeWarrior ARM compiler versions. It contains
    subfolders like `1.2/`, `2.0/` with service-pack subdirs (e.g. `sp1`, `sp2p2`),
    each holding `mwccarm.exe`, `mwldarm.exe`, `mwasmarm.exe`.
-2. **`license.dat`** — the CodeWarrior license file (often bundled in the same zip or a
+2. **`license.dat`**, the CodeWarrior license file (often bundled in the same zip or a
    sibling `.rar`).
-3. A **NITRO-SDK** archive if pinned (e.g. `NitroSDK-*.7z`) — needed later for SDK
+3. A **NITRO-SDK** archive if pinned (e.g. `NitroSDK-*.7z`), needed later for SDK
    library headers/objects. Not required just to start matching game functions.
 
 ## Where to put it

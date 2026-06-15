@@ -5,11 +5,13 @@ Matched functions are recorded in progress/matched.jsonl (one JSON object per
 line: {"addr","name","size","module","versions"}). De-duped by addr.
 
 Usage:
-    python tools/progress.py
+    python tools/progress.py            # full report
+    python tools/progress.py --bar      # ready-to-paste README "## Progress" block
 """
 import json
 import pathlib
 import re
+import sys
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 CONFIG = REPO / "config"
@@ -49,10 +51,19 @@ def matched():
             continue
         try:
             o = json.loads(line)
-            seen[int(o["addr"], 0) if isinstance(o["addr"], str) else o["addr"]] = o
+            addr = int(o["addr"], 0) if isinstance(o["addr"], str) else o["addr"]
+            # key by (module, addr): overlay addresses overlap across overlays
+            seen[(o.get("module", "arm9"), addr)] = o
         except Exception:
             continue
     return seen
+
+
+def bar(done, tot, width=30):
+    filled = round(done / tot * width) if tot else 0
+    if done and filled == 0:
+        filled = 1
+    return "█" * filled + "░" * (width - filled)
 
 
 def main():
@@ -60,6 +71,21 @@ def main():
     done = matched()
     done_n = len(done)
     done_b = sum(int(o.get("size", 0)) for o in done.values())
+
+    if "--bar" in sys.argv:
+        # ready-to-paste README "## Progress" block; reconfigure stdout so the
+        # block characters print on a Windows (cp1252) console
+        try:
+            sys.stdout.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
+        print("## Progress\n")
+        print("```")
+        print(f"Functions  {bar(done_n, n)}  {100*done_n/n:4.1f}%   {done_n:,} / {n:,}")
+        print(f"Code size  {bar(done_b, tb)}  {100*done_b/tb:4.1f}%   {done_b:,} / {tb:,} bytes")
+        print("```")
+        return
+
     print("=== SM64DS decomp progress ===")
     print(f"  functions : {done_n:,} / {n:,}  ({100*done_n/n:.4f}%)")
     print(f"  code bytes: {done_b:,} / {tb:,}  ({100*done_b/tb:.4f}%)")

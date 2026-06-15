@@ -2,65 +2,117 @@
 
 A from-scratch effort to decompile **Super Mario 64 DS** into matching C.
 
+## Progress
+
+```
+Functions  ███░░░░░░░░░░░░░░░░░░░░░░░░░░░  11.2%   1,279 / 11,390
+Code size  █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   2.1%   46,132 / 2,234,028 bytes
+```
+
 ## What "matching" means
 
-The goal is source code that, when compiled with the *original toolchain*, produces
-a binary **byte-for-byte identical** to the retail ROM. That's the bar real decomp
-projects hold to (see the N64 `sm64` project). Anything less is "C that looks right";
-matching is C that *is* right.
+The goal is source code that, when compiled with the original toolchain, produces a
+binary byte-for-byte identical to the retail ROM. This is the same standard the N64
+`sm64` project holds to. Every matched function is checked against the ROM, so the
+source is known to be correct.
 
-## Legal / scope
+## Legal and scope
 
-This repo contains **only original work**: our scripts, our hand-written C, our notes.
-It contains **no ROM and no extracted Nintendo assets** — those are read locally from a
-cartridge dump the user owns, and are git-ignored. Don't commit anything derived from
-the ROM's data/assets.
+This repo contains only original work: the tooling, the hand-written C, and the notes.
+It contains no ROM and no extracted Nintendo assets. Those are read locally from a
+cartridge dump you own, and they are git-ignored. Do not commit anything derived from
+the ROM's data or assets.
 
-## Layout
+## Notes on the numbers
 
-| Dir         | Holds                                                        |
-|-------------|-------------------------------------------------------------|
-| `tools/`    | our Python scripts (unpack ROM, disassemble, diff)          |
-| `asm/`      | working disassembly listings (scratch; gitignored for now)  |
-| `src/`      | hand-written matching C                                      |
-| `include/`  | headers / type definitions we reconstruct                   |
-| `extracted/`| ROM unpack output — **local only, gitignored**              |
-| `notes/`    | findings: memory map, struct layouts, function index        |
+Function count climbs faster than code size because the small, regular functions are
+matched first, while most of the remaining bytes live in the large, call-heavy
+functions. The original compiler has been pinned to **mwccarm 1.2/sp2p3** with these
+flags:
 
-## Status
+```
+-O4,p -enum int -lang c99 -char signed -interworking -proc arm946e -gccext,on -msgstyle gcc
+```
 
-- [x] Repo scaffolded
-- [x] Toolchain: `ndspy`, `capstone`, `pyelftools` (Python) + `dsd` analysis
-- [x] Milestone 1: unpack ROM, identify ARM9 + overlays, dump real functions
-- [x] Milestone 2: original compiler pinned — **mwccarm `1.2/sp2p3`**
-- [x] Milestone 3: byte-matching functions landing, end to end
-- [ ] The long grind: ~11,390 functions to match (in progress)
+## How matching works
 
-## Building / toolchain setup
+Every candidate is verified the same way: compile it with mwccarm, then compare the
+result to the ROM byte-for-byte, relocation-aware (call and data references are slots
+the linker fills in, so they are compared structurally). Nothing counts as matched
+until that check passes. The work is organized in tiers so the automatic methods clear
+as much as possible before any manual effort:
 
-You supply your own cartridge dump; the repo holds only original work. To get set up
-(Python deps, the proprietary `mwccarm` compiler from the DS-decomp Discord, the `dsd`
-toolkit, and ROM unpacking), see **[CONTRIBUTING.md](CONTRIBUTING.md)** and
-**[notes/setup-mwccarm.md](notes/setup-mwccarm.md)**.
+1. **Automatic templates.** A set of rules recognizes common function shapes (constant
+   returns, field getters and setters, bitfield reads, struct copies, simple wrappers,
+   constructors, and destructors), generates the C, and confirms it against the ROM.
+   This clears the bulk of small, regular functions with no hand work.
+2. **Hand-written.** For functions with real logic, you write the C yourself and verify
+   each attempt until it is byte-identical. A decompiler such as Ghidra is useful for
+   reading the function, though its output never matches on its own.
 
-## Workflow (the loop)
+## Setup
 
-1. Unpack ROM -> ARM9 / ARM7 / overlays / filesystem (`tools/unpack.py`)
-2. Disassemble a region to ARM (`tools/disasm.py`)
-3. Hand-write C for one function
-4. Compile with mwccarm and byte-diff against the ROM, relocation-aware (`tools/match.py`)
-5. Iterate until identical, then move to the next function
+You supply your own cartridge dump. Full setup (Python dependencies, the proprietary
+mwccarm compiler from the DS-decomp Discord, the dsd toolkit, and unpacking your ROM)
+is in [CONTRIBUTING.md](CONTRIBUTING.md) and
+[notes/setup-mwccarm.md](notes/setup-mwccarm.md).
 
-## Contributing & contact
+Short version:
 
-Help is welcome — every matched function counts. See **[CONTRIBUTING.md](CONTRIBUTING.md)**
-for setup and the matching loop.
+```
+pip install ndspy capstone pyelftools
+# get mwccarm + license.dat per notes/setup-mwccarm.md, then:
+python tools/unpack.py "path/to/your-own-sm64ds.nds"
+```
 
-- **Discord: `beansntoast`** — DM me to claim work or ask questions.
-- Or open an issue to claim a function/area so we don't double up.
+## How you can help
+
+Every matched function moves the project forward, and the automatic tier means even a
+small amount of time goes a long way. See [CONTRIBUTING.md](CONTRIBUTING.md) for the
+full workflow.
+
+**Contributing code.** Pick a function, write C for it, verify it compiles to the same
+bytes as the ROM, then open a pull request. One function or a small related group per PR
+is ideal. Use only your own legally dumped ROM, and never commit it.
+
+**Coordination.** Discord `beansntoast` for questions and claiming work, or open a GitHub
+issue so two people do not grind the same function.
+
+**Funding.** Sponsoring helps cover both the development time and the AI compute that the
+matching runs on. Most functions are matched for free by the automatic templates, and the
+harder ones are matched with AI assistance at roughly 5 to 10 cents of usage each. Spread
+across everything matched so far, that works out to about 5 cents per function on average,
+and reaching the current progress has cost on the order of $50 in AI usage. You can
+sponsor at https://github.com/sponsors/bmanus2-dotcom. This goes toward development and
+compute only; it has nothing to do with Nintendo's ROM or assets.
+
+**Fastest way to start with an AI assistant.** Paste this into a Claude Code session and
+it will pull the repo and set you up:
+
+```
+Clone https://github.com/bmanus2-dotcom/sm64ds-decomp and set up the Super Mario 64 DS
+matching-decompilation toolchain on my machine. Do these in order:
+1. Read CONTRIBUTING.md and notes/setup-mwccarm.md in the repo.
+2. Install the Python dependencies: ndspy, capstone, pyelftools.
+3. Help me obtain mwccarm and license.dat from the DS-decomp Discord and place them under
+   tools/mwccarm/, then set the LM_LICENSE_FILE environment variable.
+4. Install the dsd toolkit (github.com/AetiasHax/ds-decomp).
+5. Unpack my own SM64DS cartridge dump into the local working folder.
+6. Confirm the toolchain runs.
+7. Pick an unmatched function, help me write matching C for it, and verify it compiles
+   to the same bytes as the ROM.
+Use only my own legally dumped ROM. Never commit the ROM or anything extracted from it.
+```
+
+## Credits
+
+Symbol names and struct knowledge build on community reverse-engineering work. See
+[CREDITS.md](CREDITS.md). The rule is import knowledge, write code: you may use known
+symbol names and field offsets, but all C must be written from scratch against your own
+ROM.
 
 ## License
 
-The original work in this repo (hand-written C, scripts, notes) is released under the
-**MIT License** — see [LICENSE](LICENSE). This applies only to our own code; it grants
-no rights to any Nintendo material, which is not present here.
+The original work in this repo (the C, the tooling, the notes) is released under the MIT
+License, see [LICENSE](LICENSE). This applies only to that original work and grants no
+rights to any Nintendo material, which is not present here.

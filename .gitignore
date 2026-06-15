@@ -11,6 +11,10 @@ build/
 # --- Build artifacts ---
 *.o
 
+# --- Ghidra scaffolds (derived from ROM; local only) ---
+ghidra_out/
+ghidra_targets.txt
+
 # --- Tooling / OS noise ---
 __pycache__/
 *.pyc

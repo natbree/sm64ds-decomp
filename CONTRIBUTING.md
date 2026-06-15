@@ -7,7 +7,7 @@ one is real progress.
 
 ## Get in touch
 
-- **Discord: `beansntoast`** — DM me. Best for claiming work, asking which version/flags
+- **Discord: `beansntoast`**, DM me. Best for claiming work, asking which version/flags
   to use, or getting unstuck on a function.
 - Or open a GitHub issue to claim a function/area so two people don't grind the same one.
 
@@ -22,7 +22,7 @@ You bring your own copy of the game. Nothing copyrighted lives in this repo.
    pinned in the DS-decompilation Discord, not downloadable directly. Full instructions
    in [`notes/setup-mwccarm.md`](notes/setup-mwccarm.md). Extract to `tools/mwccarm/`
    (git-ignored) and set the `LM_LICENSE_FILE` environment variable.
-3. **dsd** (the ds-decomp toolkit): https://github.com/AetiasHax/ds-decomp — it drives
+3. **dsd** (the ds-decomp toolkit): https://github.com/AetiasHax/ds-decomp, it drives
    the analysis config in `config/` and rebuilds the ROM from objects.
 4. **Python 3** plus a few packages:
    ```
@@ -60,26 +60,26 @@ codegen-identical) with flags:
    python tools/match.py --c yourfile.c --func name --addr 0x020xxxxx --size 0x.. \
        --version 1.2/sp2p3
    ```
-   A match means every instruction word **and** every relocation slot lines up — not a
-   loose "looks right." Iterate until it's identical.
+   A match means every instruction word and every relocation slot lines up. Iterate
+   until the bytes are identical.
 5. **Promote** the matched C into `src/`, commit, and open a PR.
 
 ## Ground rules
 
 - **Never commit copyrighted material.** No ROM, no extracted assets, no `mwccarm`/
-  `license.dat`. The `.gitignore` already enforces this — don't override it.
+  `license.dat`. The `.gitignore` already enforces this, don't override it.
 - **Import knowledge, write code.** You may use community symbol names and struct/field
   offsets (see [`CREDITS.md`](CREDITS.md)), but all C in `src/` must be hand-written from
   scratch against your own ROM. Do **not** paste another project's source.
-- **Match to the byte.** "C that looks right" isn't the bar; "C that *is* right" is.
+- **Match to the byte.** A function counts only when its compiled bytes equal the ROM's.
 - **Stay on the pinned toolchain.** Use the project's mwccarm version and flags so
   everyone's output is comparable.
 
 ## Submitting a PR
 
 - Fork, branch, and PR against `main`.
-- One function (or a small related cluster) per PR is ideal — easy to review.
+- One function (or a small related cluster) per PR is ideal, easy to review.
 - In the PR, note the mwccarm version/flags you matched with and the function's address.
 
-If anything here is unclear or out of date, ping me on Discord (`beansntoast`) — I'd
+If anything here is unclear or out of date, ping me on Discord (`beansntoast`), I'd
 rather fix the docs than have you stuck.
