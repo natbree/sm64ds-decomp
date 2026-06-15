@@ -1,2 +1,14 @@
-extern int VT[]; extern int func_02014fa4();
-int _ZN12CylinderClsnD1Ev(int *x) { x[0] = (int)VT; func_02014fa4(x); return (int)x; }
+/* CylinderClsn::~CylinderClsn() at 0x020150a8
+ * Complete-object destructor (D1). Installs the CylinderClsn vtable, then runs
+ * the base subobject destructor (func_02014fa4). Returns this.
+ */
+
+extern int _ZTV12CylinderClsn[];   // vtable (wildcard reloc, not byte-verified)
+extern void func_02014fa4(void* self); // base subobject destructor
+
+void* _ZN12CylinderClsnD1Ev(void* self)
+{
+    *(int*)self = (int)_ZTV12CylinderClsn; // set vptr
+    func_02014fa4(self);
+    return self;
+}

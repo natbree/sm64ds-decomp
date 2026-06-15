@@ -1,2 +1,15 @@
-extern int VT[]; extern int func_02017838();
-int _ZN15FaderBrightnessD1Ev(int *x) { x[0] = (int)VT; func_02017838(x); return (int)x; }
+/* FaderBrightness::~FaderBrightness() at 0x02017814
+ * Sets self->vtable to the FaderBrightness vtable, delegates to its base
+ * (Fader) subobject destructor (func_02017838), and returns self
+ * (ARM C++ dtor ABI). FaderBrightness adds no members of its own.
+ */
+
+extern int _ZTV15FaderBrightness[]; /* vtable for FaderBrightness */
+extern int func_02017838(int *self);  /* base (Fader) subobject destructor */
+
+int _ZN15FaderBrightnessD1Ev(int *self)
+{
+    self[0] = (int)_ZTV15FaderBrightness;  /* +0x00 vptr */
+    func_02017838(self);
+    return (int)self;
+}

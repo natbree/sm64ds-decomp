@@ -1,0 +1,12 @@
+extern void _ZN9ActorBaseD1Ev(void *);
+extern int VT0[];
+extern int VT1[];
+extern int VT2[];
+int *func_ov005_020bfec0(int *t)
+{
+    t[0] = (int)VT0;
+    t[0] = (int)VT1;
+    t[0] = (int)VT2;
+    _ZN9ActorBaseD1Ev(t);
+    return t;
+}

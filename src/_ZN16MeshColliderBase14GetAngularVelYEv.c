@@ -1,4 +1,14 @@
-int _ZN16MeshColliderBase14GetAngularVelYEv(void)
+/* MeshColliderBase::GetAngularVelY() at 0x02039428
+ * Base implementation: a non-moving mesh collider has no angular velocity,
+ * so this always returns 0. (MovingMeshCollider overrides it.)
+ */
+
+typedef unsigned short u16;
+
+struct MeshColliderBase;
+
+u16 _ZN16MeshColliderBase14GetAngularVelYEv(struct MeshColliderBase* self)
 {
+    (void)self;
     return 0;
 }

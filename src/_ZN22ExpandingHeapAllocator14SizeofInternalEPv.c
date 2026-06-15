@@ -1,4 +1,13 @@
-int _ZN22ExpandingHeapAllocator14SizeofInternalEPv(int *p)
+/* ExpandingHeapAllocator::SizeofInternal(void* userPtr) at 0x0204e084
+ * Returns the allocated size of a block given a user pointer. The block's
+ * MemoryNode header sits immediately before the user data; its `size` field (see
+ * MemoryNode in Memory.h) lives 3 words (0xc bytes) ahead of the user pointer,
+ * i.e. ((s32*)userPtr)[-3]. */
+
+typedef int s32;
+typedef unsigned int u32;
+
+u32 _ZN22ExpandingHeapAllocator14SizeofInternalEPv(void *userPtr)
 {
-    return p[-3];
+    return ((s32 *)userPtr)[-3]; /* MemoryNode.size, header at userPtr - 0xc */
 }

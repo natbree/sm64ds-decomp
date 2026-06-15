@@ -1,4 +1,14 @@
-int _ZN7Minimap16CleanupResourcesEv(void)
+/* Minimap::CleanupResources() at 0x020f9e8c (ov002) -- vtable slot 3.
+ * Returns VS_FAIL (1); the minimap holds no SharedFilePtr/heap resources
+ * to release on death. Minimap : ActorDerived : ActorBase.
+ */
+
+typedef int s32;
+
+struct Minimap;
+
+s32 _ZN7Minimap16CleanupResourcesEv(struct Minimap *self)
 {
+    (void)self;
     return 1;
 }

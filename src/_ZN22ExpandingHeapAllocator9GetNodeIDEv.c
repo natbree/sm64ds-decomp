@@ -1,4 +1,12 @@
-int _ZN22ExpandingHeapAllocator9GetNodeIDEv(unsigned short *p)
+/* ExpandingHeapAllocator::GetNodeID() at 0x0204e0e0
+ * Returns the current nodeID assigned to subsequently allocated nodes. nodeID is
+ * a u16 field at offset 0x34 of ExpandingHeapAllocator (26 * sizeof(u16)); see
+ * Memory.h. */
+
+typedef unsigned int u32;
+typedef unsigned short u16;
+
+u32 _ZN22ExpandingHeapAllocator9GetNodeIDEv(u16 *self)
 {
-    return p[26];
+    return self[26]; /* nodeID at +0x34 */
 }
