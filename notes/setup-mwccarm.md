@@ -4,10 +4,10 @@
 isn't downloadable directly. It's free but lives in the decomp community's Discord.
 
 ## Where
-The **DS Decompilation Discord** (a.k.a. the pret/DS-decomp server). Invite is linked
-from the dsd toolkit's community section: https://github.com/AetiasHax/ds-decomp
-(look for the #dsd channel / pinned messages). The pret Discord servers
-(pokediamond/pokeheartgold) have the same pinned files.
+The **DS Decompilation Discord**: https://discord.com/invite/gwN6M3HQrA
+`mwccarm.zip` is in the **resources** channel. The invite is also linked from the dsd
+toolkit's community section (https://github.com/AetiasHax/ds-decomp), and the pret
+Discord servers (pokediamond/pokeheartgold) have the same pinned files.
 
 ## What to grab (from the pinned messages)
 1. **`mwccarm.zip`**, the whole set of CodeWarrior ARM compiler versions. It contains
