@@ -74,7 +74,7 @@ def callee_set(addr, ins, relocs, syms):
         if i.mnemonic in ("bl", "blx"):
             e = relocs.get(addr + i.address)
             if e:
-                out.add(R.name_of(e[1], syms))
+                out.add(R.name_for_reloc(e, syms))
     return frozenset(out)
 
 
@@ -130,7 +130,7 @@ def annotate(name, addr, size, tgt, relocs, syms):
         if i.mnemonic in ("bl", "blx", "b"):
             e = relocs.get(addr + i.address)
             if e:
-                who = R.name_of(e[1], syms)
+                who = R.name_for_reloc(e, syms)
                 note = f"  ; -> {who}"
                 callees.append(who)
         else:
@@ -140,7 +140,7 @@ def annotate(name, addr, size, tgt, relocs, syms):
                 if 0 <= coff + 4 <= len(tgt):
                     e = relocs.get(addr + coff)
                     if e:
-                        sym = R.name_of(e[1], syms)
+                        sym = R.name_for_reloc(e, syms)
                         note = f"  ; = &{sym}"
                         pool.append({"off": f"0x{coff:x}", "sym": sym})
                     else:

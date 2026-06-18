@@ -614,7 +614,7 @@ def callee_name(addr, ins, relocs, syms):
         if i.mnemonic in ("bl", "blx"):
             entry = relocs.get(addr + i.address)
             if entry:
-                return R.name_of(entry[1], syms)
+                return R.name_for_reloc(entry, syms)
     return None
 
 
@@ -677,7 +677,7 @@ def rule_chain_dtor(name, ins, b, addr, relocs, syms):
         e = relocs.get(addr + bi.address)
         if not e:
             return None
-        calls.append((off, R.name_of(e[1], syms)))
+        calls.append((off, R.name_for_reloc(e, syms)))
     if not calls:
         return None
     decls = "".join(f"extern int {c}();\n" for c in dict.fromkeys(c for _, c in calls))
@@ -699,7 +699,7 @@ def rule_guard_call(name, ins, b, addr, relocs, syms):
     e1, e2 = relocs.get(addr + ins[2].address), relocs.get(addr + ins[7].address)
     if not (e1 and e2):
         return None
-    c1, c2 = R.name_of(e1[1], syms), R.name_of(e2[1], syms)
+    c1, c2 = R.name_for_reloc(e1, syms), R.name_for_reloc(e2, syms)
     if name in (c1, c2):
         return None
     decls = f"extern int {c1}();\n" + (f"extern int {c2}();\n" if c2 != c1 else "")
@@ -762,7 +762,7 @@ def _parse_obj_body(body, addr, relocs, syms):
             e = relocs.get(addr + ii.address)
             if not e:
                 return None
-            who = R.name_of(e[1], syms)
+            who = R.name_for_reloc(e, syms)
             gid = next((v[1] for r, v in pool.items() if isinstance(v, tuple)), None)
             if gid is not None:
                 pool = {r: v for r, v in pool.items() if not isinstance(v, tuple)}
@@ -1157,7 +1157,7 @@ def rule_new_ctor(name, ins, b, addr, relocs, syms):
     if not parsed:
         return None
     ops, vt, g = parsed
-    new = R.name_of(e_new[1], syms)
+    new = R.name_for_reloc(e_new, syms)
     ctors = [o[2] for o in ops if o[0] in ("ctor", "dealloc")]
     if not ctors or name in ([new] + ctors):
         return None
@@ -1232,7 +1232,7 @@ def rule_frame_call_const(name, ins, b, addr, relocs, syms):
             e = relocs.get(addr + ii.address)
             if not e:
                 return None
-            nm = R.name_of(e[1], syms)
+            nm = R.name_for_reloc(e, syms)
             if pglob:
                 calls.append((nm, "g", gi))
                 gi += 1
@@ -1282,7 +1282,7 @@ def rule_frame_call_bool(name, ins, b, addr, relocs, syms):
     e = relocs.get(addr + ins[k].address)
     if not e:
         return None
-    X = R.name_of(e[1], syms)
+    X = R.name_for_reloc(e, syms)
     if name == X:
         return None
     kind, v = arg
@@ -1307,7 +1307,7 @@ def rule_deleting_dtor(name, ins, b, addr, relocs, syms):
     e1, e2 = relocs.get(addr + ins[4].address), relocs.get(addr + ins[8].address)
     if not (e1 and e2):
         return None
-    d1, d2 = R.name_of(e1[1], syms), R.name_of(e2[1], syms)
+    d1, d2 = R.name_for_reloc(e1, syms), R.name_for_reloc(e2, syms)
     if d1 == d2 or name in (d1, d2):
         return None
     decls = (f"extern int VT[];\nextern void {d1}(void *);\n"
@@ -1349,7 +1349,7 @@ def rule_call_scale_fields(name, ins, b, addr, relocs, syms):
     e = relocs.get(addr + ins[k].address)
     if not e:
         return None
-    F = R.name_of(e[1], syms)
+    F = R.name_for_reloc(e, syms)
     start = k + 1
     end = next((j for j in range(start, len(ins) - 1) if ins[j].mnemonic == "pop"
                 and ins[j + 1].mnemonic == "bx" and squash(ins[j + 1].op_str) == "lr"), None)
@@ -1396,7 +1396,7 @@ def rule_two_call_wrapper(name, ins, b, addr, relocs, syms):
     e1, e2 = relocs.get(addr + ins[2].address), relocs.get(addr + ins[yi].address)
     if not (e1 and e2):
         return None
-    X, Y = R.name_of(e1[1], syms), R.name_of(e2[1], syms)
+    X, Y = R.name_for_reloc(e1, syms), R.name_for_reloc(e2, syms)
     if X == Y or name in (X, Y):
         return None
     if kk:
@@ -1472,7 +1472,7 @@ def rule_frame_call_globals(name, ins, b, addr, relocs, syms):
             e = relocs.get(addr + ii.address)
             if not e or not pending:
                 return None
-            calls.append((R.name_of(e[1], syms), pending))
+            calls.append((R.name_for_reloc(e, syms), pending))
             pending, expect = [], 0
         else:
             return None
@@ -1533,7 +1533,7 @@ def rule_guarded_call_block(name, ins, b, addr, relocs, syms):
     ge = relocs.get(addr + body[i].address)
     if not ge:
         return None
-    Gname = R.name_of(ge[1], syms)
+    Gname = R.name_for_reloc(ge, syms)
     i += 1
     if i + 1 >= len(body) or body[i].mnemonic != "cmp" or squash(body[i].op_str) != "r0,#0" \
             or body[i + 1].mnemonic != "beq":
@@ -1551,7 +1551,7 @@ def rule_guarded_call_block(name, ins, b, addr, relocs, syms):
         e = relocs.get(addr + body[ni].address)
         if not e:
             return None
-        (guarded if body[ni].address < bt else after).append((R.name_of(e[1], syms), aexpr))
+        (guarded if body[ni].address < bt else after).append((R.name_for_reloc(e, syms), aexpr))
         i = ni + 1
     if not guarded or name in ([Gname] + [c for c, _ in guarded + after]):
         return None
@@ -1603,7 +1603,7 @@ def _parse_method_body(body, addr, relocs, syms):
             e = relocs.get(addr + ii.address)
             if not e:
                 return None
-            ops.append(("call", pending or 0, R.name_of(e[1], syms)))
+            ops.append(("call", pending or 0, R.name_for_reloc(e, syms)))
             pending = None
         else:
             return None
@@ -1666,7 +1666,7 @@ def rule_guard_load_call(name, ins, b, addr, relocs, syms):
     e = relocs.get(addr + ins[8].address)
     if not e:
         return None
-    f = R.name_of(e[1], syms)
+    f = R.name_for_reloc(e, syms)
     if name == f:
         return None
     return (f"extern void {f}(int);\n"
@@ -1688,7 +1688,7 @@ def rule_fixed5_wrapper(name, ins, b, addr, relocs, syms):
     e = relocs.get(addr + ins[7].address)
     if not e:
         return None
-    f = R.name_of(e[1], syms)
+    f = R.name_for_reloc(e, syms)
     if name == f:
         return None
     return (f"extern void {f}(int, void *, int, int, int);\n"
@@ -1709,7 +1709,7 @@ def rule_call_then_virtual(name, ins, b, addr, relocs, syms):
     e = relocs.get(addr + ins[3].address)
     if not e:
         return None
-    x, voff = R.name_of(e[1], syms), int(vo.group(1), 0)
+    x, voff = R.name_for_reloc(e, syms), int(vo.group(1), 0)
     if name == x or voff % 4:
         return None
     virts = "".join(f"virtual void v{i}(); " for i in range(voff // 4))
@@ -1738,7 +1738,7 @@ def rule_call2_then_virtual(name, ins, b, addr, relocs, syms):
     e = relocs.get(addr + ins[4].address)
     if not e:
         return None
-    x, voff = R.name_of(e[1], syms), int(vo.group(1), 0)
+    x, voff = R.name_for_reloc(e, syms), int(vo.group(1), 0)
     if name == x or voff % 4:
         return None
     virts = "".join(f"virtual void v{i}(); " for i in range(voff // 4))
@@ -1807,7 +1807,7 @@ def main():
     args = ap.parse_args()
 
     targets = enumerate_targets(args.min, args.max, args.mode, args.count)
-    relocs, syms = R.load_relocs(), R.load_syms()
+    relocs, syms = R.load_relocs(), R.load_all_syms()
     print(f"scanning {len(targets)} unmatched {args.mode} functions "
           f"(size 0x{args.min:x}-0x{args.max:x})\n")
 
