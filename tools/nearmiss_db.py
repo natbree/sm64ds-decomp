@@ -31,7 +31,31 @@ import swarm as S
 DB = REPO / "nearmiss" / "db.jsonl"
 SRC = REPO / "src"
 LEDGER = REPO / "progress" / "matched.jsonl"
+LOCKDIR = REPO / "nearmiss" / ".lock"
 REG = re.compile(r"\b(r\d+|sb|sl|fp|ip|sp|lr|pc)\b")
+
+
+class locked:
+    """Cross-process mutex (atomic mkdir) so multiple cruncher instances can safely
+    read-modify-write the DB and ledger. Hold it only for the brief write, never while
+    permuting."""
+    def __enter__(self):
+        import time, os
+        LOCKDIR.parent.mkdir(parents=True, exist_ok=True)
+        for _ in range(1200):
+            try:
+                os.mkdir(LOCKDIR)
+                return self
+            except FileExistsError:
+                time.sleep(0.1)
+        raise TimeoutError("could not acquire nearmiss db lock")
+
+    def __exit__(self, *a):
+        import os
+        try:
+            os.rmdir(LOCKDIR)
+        except OSError:
+            pass
 
 
 def _disasm(code, relocs):
