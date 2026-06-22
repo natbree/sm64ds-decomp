@@ -165,6 +165,16 @@ C that compiles to a different instruction SHAPE. The recurring structural misse
   reordered assignments.
 - **Arithmetic idiom.** `mul` then `sub` is `x*K - C`, not `(x - C/K)*K`. Reproduce the exact
   op sequence, not an algebraically-equal rewrite.
+- **Switch case-block layout follows source case-label ORDER, not value order.** When a
+  dense jump-table switch lays its case BLOCKS out in a non-numeric memory order, reorder the
+  `case` labels in the source to match the block order in the disasm (e.g. write `case 1: ...
+  case 3: ... case 2:` to get the 1,3,2 block layout). For a dense 0..N table mwccarm needs the
+  low cases PRESENT even if empty -- add `case 0: case 1:` stubs to force the table instead of a
+  compare chain (`func_0205fab4`, `func_02040724`, 2026-06-22).
+- **Loop entry-guard shape = `while (p && cond)`.** A traversal that tests at the TOP and
+  advances before the body (entry-guard `b`/`bls`/`blo` then a bottom back-edge) comes from a
+  compound `while (p && cond)`, not a `for` or `do/while` -- those reallocate the iterator
+  register and add/move the guard (`func_020584d0`, `func_020719ec`, 2026-06-22).
 On a FALSE, diff your candidate's shape against the disasm and fix the FIRST divergence (a
 missing reload, a flipped branch, an extra/absent instruction) -- don't just reshuffle.
 
@@ -195,6 +205,13 @@ WHEN to reach for it (these read as HARD floor from C but are really hand-asm):
   block copy keeping both pointers live (`Copy32Bytes`, `MultiStore_Int`, memcpy primitives) --
   mwccarm's struct/loop copy always relocates pointers to lr/ip and uses 4-reg `{r0-r3}` batches
   with a frame, never the 3-reg frameless schedule.
+- A leaf with NO prologue/epilogue that uses `r4`-`r7` (or any callee-saved) WITHOUT saving them
+  and exits by FALLING THROUGH to the next function (no `bx lr`). No compiled C can use a
+  callee-saved register without a save/restore frame, so this is hand-asm by definition (segment/
+  autoload initializers that chain to the next routine: `func_0200497c`, found 2026-06-22). Write
+  the trailing fall-through as `b <next_function_symbol>` -- the branch becomes a wildcarded reloc
+  AND it forces mwccarm's auto literal-pool to land BEFORE the branch target, exactly as the ROM
+  has it. `b done`/`bx lr`/no-terminator all mis-size the pool.
 - SVC/syscall wrappers (`svc #N; mov pc,lr`).
 - `mov`-materialized-constant stores coalesced into `stm rN!,{...}` pairs (Matrix*_LoadIdentity)
   -- though this one is sometimes still not reachable even via asm; try it.
