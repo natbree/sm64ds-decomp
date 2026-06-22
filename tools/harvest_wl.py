@@ -79,6 +79,15 @@ def main():
                 if l.strip():
                     r = json.loads(l)
                     parked.add((r["module"], r["addr"]))
+    # also exclude functions already in the near-miss DB: they were attempted and their best
+    # compiling attempt is stored (nearmiss/db.jsonl); re-fanning them out wastes tokens. Finish
+    # those through the permuter / by hand from the DB, not by re-harvesting.
+    nmdb = REPO / "nearmiss" / "db.jsonl"
+    if nmdb.exists():
+        for l in nmdb.read_text(encoding="utf-8").splitlines():
+            if l.strip():
+                r = json.loads(l)
+                parked.add((r["module"], r["addr"]))
     rows = [r for r in rows if (r["module"], r["addr"]) not in parked]
 
     sz = lambda r: int(r["size"], 16) if isinstance(r["size"], str) else r["size"]
