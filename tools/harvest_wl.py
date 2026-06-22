@@ -17,16 +17,33 @@ md = Cs(CS_ARCH_ARM, CS_MODE_ARM)
 REPO = pathlib.Path(__file__).resolve().parent.parent
 
 
+def _adj_thunk(ins):
+    """this-adjusting veneer (multiple-inheritance dtor/method): ends in a direct `b`
+    and adjusts `this` through `ip` (a scratch reg loaded from a pooled offset) --
+    `add/sub r0, r0, ip`. Only binds under its mangled _ZThn* name, so it is unmatchable
+    from C under a func_* symbol. Restricted to the `ip` form on purpose: an immediate
+    adjust (`add r0,r0,#k; b f`) can be a MATCHABLE tail-call `return f(this+k)`, so we
+    must not flag that."""
+    if not ins or ins[-1].mnemonic != "b":
+        return False
+    body = " ".join(i.mnemonic + " " + i.op_str for i in ins[:-1])
+    return "add r0, r0, ip" in body or "sub r0, r0, ip" in body
+
+
 def is_floor(target_hex):
-    """The materialize-base single-field RMW shape (add (ldr*) ... (str*)), proven
-    unmatchable from C at 1.2: the ROM materializes `add rX,base,#off` then RMWs through
-    [rX] while C folds to [base,#off]. Conservative -- only the obvious leaf shape."""
+    """Known-unmatchable shapes to keep out of the fan-out: the leaf materialize-RMW
+    (`add (ldr*) ... (str*)`, base folds from C) and this-adjusting thunks. Kept STRICT
+    on purpose -- a filter that drops a matchable function is worse than one that lets a
+    little floor through (agents identify the subtler mid-band/guarded floor cheaply, and
+    those feed the NONMATCHING hatch). Do not broaden this to guarded/mid-band RMW: tested,
+    it false-positives on matchable functions."""
     ins = list(S.code_insns(list(md.disasm(bytes.fromhex(target_hex), 0))))
     if not ins:
         return False
     mn = [i.mnemonic for i in ins]
-    return (mn[0] == "add" and len(mn) >= 4 and mn[1] in ("ldr", "ldrb", "ldrh")
-            and any(m in ("str", "strb", "strh") for m in mn[-3:]))
+    leaf_rmw = (mn[0] == "add" and len(mn) >= 4 and mn[1] in ("ldr", "ldrb", "ldrh")
+                and any(m in ("str", "strb", "strh") for m in mn[-3:]))
+    return leaf_rmw or _adj_thunk(ins)
 
 
 def main():
