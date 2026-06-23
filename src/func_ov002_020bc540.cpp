@@ -1,0 +1,18 @@
+//cpp
+extern "C" {
+extern void* _ZN5Model8LoadFileER13SharedFilePtr(void*);
+extern int _ZN9ModelBase7SetFileEP8BMD_Fileii(char*, void*, int, int);
+extern void* _ZN9Animation8LoadFileER13SharedFilePtr(void*);
+extern int _ZN9ModelAnim7SetAnimEP8BCA_Filei5Fix12IiEj(char*, void*, int, int, unsigned int);
+extern void func_ov002_020bc488(char*);
+extern int data_ov002_0210e0dc[];
+extern int data_ov002_0210e0d4[];
+int func_ov002_020bc540(char* c){
+  void* m = _ZN5Model8LoadFileER13SharedFilePtr(data_ov002_0210e0dc);
+  _ZN9ModelBase7SetFileEP8BMD_Fileii(c+0xd4, m, 1, -1);
+  void* a = _ZN9Animation8LoadFileER13SharedFilePtr(data_ov002_0210e0d4);
+  _ZN9ModelAnim7SetAnimEP8BCA_Filei5Fix12IiEj(c+0xd4, a, 0, 0x1000, 0);
+  func_ov002_020bc488(c);
+  return 1;
+}
+}
