@@ -22,7 +22,7 @@ If you contribute, keep this separation: import knowledge, write code.
   our automated passes; all were independently re-verified byte-for-byte before landing.
 
 ## Tooling contributions
-- **webhead2oo9** (https://github.com/webhead2oo9) - made the relocation symbol resolver
+- **webheadvr** (https://github.com/webheadvr) - made the relocation symbol resolver
   module-aware: it now resolves by `(module, address)` instead of address alone, so a
   reloc is no longer mis-resolved to a symbol from a different overlay where overlay
   address ranges overlap. Also added ITCM/DTCM symbol support.
