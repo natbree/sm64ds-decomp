@@ -144,6 +144,10 @@ Symbol names and struct knowledge build on community reverse-engineering work. S
 symbol names and field offsets, but all C must be written from scratch against your own
 ROM.
 
+Function contributions: [RyanCopley](https://github.com/RyanCopley) hand-matched a set of
+functions across ov002, ov006, arm9, and ov034 (PR #1), including the first functions in
+ov034 and several that had resisted the automated passes.
+
 Tooling contributions: [webheadvr](https://github.com/webheadvr) made the relocation
 symbol resolver module-aware, fixing wrong-overlay symbol picks where overlay address
 ranges overlap.
