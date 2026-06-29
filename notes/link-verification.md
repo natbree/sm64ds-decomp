@@ -29,19 +29,46 @@ These are reported BENIGN, not WRONG. The check reads the trampoline/twin from t
 it is best-effort across overlapping overlays; a few benign cases it cannot confirm stay in
 WRONG conservatively.
 
-## Corpus result (7,180 banked matches, 2026-06-29, after the first fix pass)
+## Two linker behaviors the checker must model (else it false-flags correct source)
+
+`linkcheck` reconstructs the LINKED bytes, so it has to link the way the real linker does.
+Two cases were initially mishandled and reported correct source as WRONG:
+
+- relocation addend. mwccarm emits RELA relocations; every base+offset access (struct
+  field, array element) is encoded as the symbol's base address plus a nonzero `r_addend`,
+  e.g. `&data[i].field`. Linking only the base mis-links the slot. The linked word is
+  `base + addend` (REL objects carry the addend in the slot instead). `func_relocs_typed`
+  now captures it and `link_function` applies it. This cleared the multi-slot same-base
+  false positives (a struct array touched through one symbol at several field offsets).
+- ARM->Thumb interworking. A `BL` whose target is a Thumb symbol (a 2-byte-aligned address
+  such as the SDK `CpuSet` / `WaitByLoop`) is rewritten by the linker to `BLX` (the H bit
+  carries the halfword). The candidate object emits a plain `BL` relocation. `is_interwork`
+  recognizes a `BLX` ROM slot whose destination equals the address the candidate names and
+  reports BENIGN: only the encoding differs, the call is correct.
+
+## Corpus result (7,180 banked matches, 2026-06-29, after the full fix pass)
 
 | verdict | count | meaning |
 |---|---:|---|
-| VERIFIED | 5,320 | every reloc resolved and the linked bytes equal the ROM |
-| BENIGN | 19 | only veneer/twin diffs; source is correct |
-| BLIND | 1,784 | a reloc targets an invented name with no address, unverifiable |
-| WRONG | 57 | a resolved reloc links to bytes that differ from the ROM |
+| VERIFIED | 5,366 | every reloc resolved and the linked bytes equal the ROM |
+| BENIGN | 26 | only veneer / twin / ARM->Thumb interworking diffs; source is correct |
+| BLIND | 1,787 | a reloc targets an invented name with no address, unverifiable |
+| WRONG | 1 | a resolved reloc links to bytes that differ from the ROM |
 
-An initial pass fixed 53 genuine wrong destinations (repoint the reference at the address
-the ROM uses; matched bytes unchanged). Of the remaining 57 WRONG, 35 are genuine and still
-need fixing (a tail where the swap changes codegen, plus `__sinit` initializers with several
-wrong data pointers), and 22 are veneer/twin cases the tool could not auto-confirm.
+An initial pass fixed 53 genuine wrong destinations; this pass fixed 50 more and corrected
+the two checker behaviors above, taking WRONG from 57 to 1. The fixes were mechanical
+symbol repoints (rename the wrong identifier to the canonical name of the address the ROM
+uses) verified per function with `linkcheck` (not WRONG, still reproduces) and the byte
+oracle, reverting any that perturbed codegen. Shapes fixed: data symbols resolving to the
+wrong overlay, swapped pointer pairs (e.g. `Player`'s ctor/dtor callback pair registered in
+the wrong order), and `__sinit` initializers registering wrong data pointers. The two
+`_ZThn80_N9Animation{D0,D1}Ev` thunks were re-identified as `ModelAnim2`'s secondary-base
+thunks (they branch to `_ZN10ModelAnim2D{0,1}Ev`) and renamed.
+
+The lone remaining WRONG is `_ZThn80_N10ModelAnim2D0Ev`: the secondary-base DELETING
+destructor thunk. The ROM branches it to `D0` (0x02016320); CodeWarrior emits it as a
+tail-branch to `D1` for this class under all 11 toolchain versions, so source cannot
+reproduce the `D0` delegation. Left as a documented codegen residual, not a source error.
 
 ## The residual blind spot
 
@@ -61,7 +88,7 @@ python tools/linkcheck.py --json out.json
 
 ## Next
 
-Review the 129 WRONG matches (`linkcheck.py` prints the per-slot detail). The common
-shapes are C++ destructor variants (D0/D1/D2), data symbols whose name resolves to the
-wrong overlay address, and `__sinit` initializers registering the wrong data pointers.
-Fix or re-match them so the headline count stays honest.
+WRONG is down to 1 (the `ModelAnim2` D0 thunk above). Re-run `linkcheck.py` after any
+harvest batch so newly banked matches with wrong destinations are caught while the source
+is fresh; the same repoint recipe applies. Closing more BLIND would need a fuller symbol
+table (addresses for the invented names).
