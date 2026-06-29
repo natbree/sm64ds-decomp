@@ -1,8 +1,3 @@
-/* func_020485f0 at 0x020485f0
- *
- * Matched byte-for-byte with mwccarm 1.2/sp2p3 (arm9 main).
- */
-typedef unsigned char u8;
 typedef unsigned short u16;
 
 extern u16 data_02099fa4;
@@ -14,26 +9,26 @@ void func_020485f0(int *thiz, int *a)
 {
     int r5 = a[0] >> 12;
     unsigned int x;
+    u16 r4;
     int v;
-    int h;
     if (thiz == 0) return;
     if (thiz[0] == 0) return;
     x = func_02049018(a);
-    h = *(u16 *)((char *)thiz[0] + 0x3a);
-    if (h == 0x81) {
+    r4 = *(u16 *)(((char *)thiz[0]) + 0x3a);
+    if (r4 == 0x81) {
         if (x > 0x4b0) v = 0;
         else if (x <= 0x64) v = 0x7f;
-        else v = (int)(0x4b0 - x) * 0x7f / 0x44c;
+        else v = (int)(0x4b0 - x) * 0x7f / 1100;
     } else {
         if (x >= 0x8bc) v = 0;
         else if (x < 0x3e8) v = 0x7f;
-        else v = (int)(0x8bc - x) * 0x7f / 0x4d4;
+        else v = (int)(0x8bc - x) * 0x7f / 1236;
     }
     func_0204f924(thiz, v);
     r5 = r5 >> 4;
     if (r5 > 0x3f) r5 = 0x3f;
     else if (r5 < -0x40) r5 = -0x40;
-    if (h == 0x103) {
+    if (r4 == 0x103) {
         func_0204f7cc(thiz, 1, r5);
     } else {
         func_0204f7cc(thiz, data_02099fa4, r5);
