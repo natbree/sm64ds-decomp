@@ -5,8 +5,8 @@ A from-scratch effort to decompile **Super Mario 64 DS** into matching C.
 ## Progress
 
 ```
-Functions  ███████████████████░░░░░░░░░░░  64.5%   7,341 / 11,390
-Code size  █████████░░░░░░░░░░░░░░░░░░░░░  30.8%   687,012 / 2,234,028 bytes
+Functions  ████████████████████░░░░░░░░░░  65.6%   7,472 / 11,390
+Code size  ██████████░░░░░░░░░░░░░░░░░░░░  32.3%   721,264 / 2,234,028 bytes
 ```
 
 Every arm-mode function in the game, drawn as a treemap. Each rectangle is one
@@ -59,6 +59,11 @@ as much as possible before any manual effort:
    each attempt until it is byte-identical. A decompiler such as Ghidra is useful for
    reading the function, though its output never matches on its own.
 
+For already-banked matches, `tools/linkcheck.py` performs the stronger relocation
+destination check: it reconstructs each function's linked bytes and compares them to
+the ROM, catching wrong callees or globals that the normal unlinked byte diff would
+wildcard. See [notes/link-verification.md](notes/link-verification.md).
+
 ## Setup
 
 You supply your own cartridge dump. Full setup (Python dependencies, the proprietary
@@ -70,7 +75,7 @@ Short version:
 
 ```
 pip install ndspy capstone pyelftools
-# get mwccarm + license.dat per notes/setup-mwccarm.md, then:
+# get mwccarm per notes/setup-mwccarm.md, then:
 python tools/unpack.py "path/to/your-own-sm64ds.nds"
 ```
 
@@ -103,10 +108,10 @@ Clone https://github.com/bmanus2-dotcom/sm64ds-decomp and set up the Super Mario
 matching-decompilation toolchain on my machine. Do these in order:
 1. Read CONTRIBUTING.md and notes/setup-mwccarm.md in the repo.
 2. Install the Python dependencies: ndspy, capstone, pyelftools.
-3. mwccarm and license.dat cannot be downloaded automatically: they are in the DS-decomp
+3. mwccarm cannot be downloaded automatically: it is in the DS-decomp
    Discord (https://discord.com/invite/gwN6M3HQrA, resources channel, mwccarm.zip) and I
-   have to fetch them by hand. Wait for me to do that, then help me place them under
-   tools/mwccarm/ and set the LM_LICENSE_FILE environment variable.
+   have to fetch it by hand. Wait for me to do that, then help me place it under
+   tools/mwccarm/.
 4. Unpack my own SM64DS cartridge dump with tools/unpack.py. This writes the ARM9, ARM7,
    and overlay binaries into extracted/ (gitignored), including both the compressed
    arm9.bin and the decompressed arm9_dec.bin. Use the decompressed image for disassembly.
