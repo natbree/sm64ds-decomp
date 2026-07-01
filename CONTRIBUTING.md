@@ -74,6 +74,30 @@ Before you start writing C, skim [`notes/mwccarm-codegen.md`](notes/mwccarm-code
 documents how this exact compiler turns C into bytes (struct copies, bitfield shifts, C++
 virtual/PMF dispatch, the register-allocation wall, and the common idiom families). Writing
 with those habits in mind gets your first draft close and cuts iterations.
+[`notes/pret-idioms.md`](notes/pret-idioms.md) collects the matching idioms the pret DS
+decomps use for the same compiler (declaration order controls register allocation, etc.).
+
+## Easy pickings: the near-miss database
+
+[`nearmiss/db.jsonl`](nearmiss/db.jsonl) holds ~1,600 compiling candidates that are close
+to matching but not exact - many are only 1-4 instructions off. Each record carries the
+function name, address, the candidate C, and how many instructions diverge. These are the
+best-value functions to finish by hand:
+
+```
+python tools/nearmiss_db.py list --max-div 4
+```
+
+then take the stored `c_source` as your starting point and iterate with
+`tools/fdiff.py` (prints exactly which instructions differ, relocation-aware):
+
+```
+python tools/fdiff.py --c yourfile.c --name FUNC --module ov0xx --addr 0x... --size 0x...
+```
+
+Fair warning: some residuals are a known compiler wall (instruction ordering,
+base-address materialization - see [`notes/mwccarm-codegen.md`](notes/mwccarm-codegen.md));
+if a 1-2 instruction gap refuses to close, it may be one of those. Ask on Discord.
 
 ## Ground rules
 

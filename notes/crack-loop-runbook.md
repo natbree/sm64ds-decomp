@@ -4,41 +4,76 @@ The whole matching loop in commands. State as of this writing: **66.7% matched
 (7,593 / 11,390)**, goal 70% (7,973). All tooling below is committed, so any fresh
 session or the coworker can run it straight from a clone.
 
-## One batch, start to finish
+## One batch = three commands
 
 ```sh
-# 1. Build a coddog-scheduled worklist (fuzzy opcode similarity; ~30s, no LLM cost).
-#    Pick a size band; --spread round-robins modules. Rebuild EVERY batch (the matched
-#    corpus changes as functions land, which changes the best siblings).
-python tools/coddog.py --min 0x100 --max 0x280 --limit 30 --spread --out progress/wl_ab.jsonl
+# 1. Prep: coddog worklist (fuzzy opcode similarity, ~30s, no LLM cost) + claim the
+#    module spans + trim to what we locked. Rebuild EVERY batch (the matched corpus
+#    changes as functions land, which changes the best siblings). Prints the launch line.
+python tools/crackloop.py prep --min 0x100 --max 0x280 --limit 30
 
-# 2. Claim the module spans (coordination; skips anything the coworker holds).
-python tools/claims.py lock-worklist progress/wl_ab.jsonl        # writes progress/claims_active.json
-#    Trim the worklist to only the modules we actually locked (drop coworker-held ones):
-python - <<'PY'
-import json
-locked=set(json.load(open("progress/claims_active.json")))
-rows=[json.loads(l) for l in open("progress/wl_ab.jsonl")]
-keep=[r for r in rows if r['module'] in locked]
-open("progress/wl_ab.jsonl","w").write("".join(json.dumps(r)+"\n" for r in keep))
-print("names:", json.dumps([r['name'] for r in keep]))
-PY
-
-# 3. Fan out (self-verifying). Default Sonnet 5; pass model:"fable" for a capability push.
+# 2. Fan out (self-verifying). Default Sonnet 5; model:"fable" for a capability push.
 #    In Claude Code: Workflow({ scriptPath: "tools/sched_run.js", args: <names[]> })
 #                    Workflow({ scriptPath: "tools/sched_run.js", args: {names:[...], model:"fable", effort:"high"} })
 
-# 4. Bank the result (independent re-verify + park misses), then free post-pass.
-python tools/bank_run.py --output <the Workflow task .output file>
-python tools/clone.py && python tools/paramclone.py
+# 3. Land: bank (independent re-verify + park misses + auto-ingest near-misses into
+#    nearmiss/db.jsonl) + free post-pass (clone/paramclone) + release claims + progress.
+python tools/crackloop.py land --output <the Workflow task .output file>
 
-# 5. Release the claims. ALWAYS do this, even on a stopped/failed batch.
-python tools/claims.py release-active
-
-# 6. Refresh + commit (src is committed; matched.jsonl/nonmatching.jsonl are gitignored).
-python tools/progress.py
-git add src/ README.md && git commit -m "Match N functions via coddog fan-out (XX.X%)"
+# Commit (src + nearmiss DB are committed; matched.jsonl/nonmatching.jsonl are gitignored).
+git add src/ nearmiss/ README.md && git commit -m "Match N functions via coddog fan-out (XX.X%)"
 ```
+
+Every step still exists standalone (coddog.py, claims.py lock-worklist/release-active,
+bank_run.py, clone.py, paramclone.py, progress.py) if a batch needs surgery. On a public
+clone without tools/claims.py (it is gitignored, holds the claims API key), prep skips
+the lock step and says so - coordinate via CLAIMS.md instead.
+ALWAYS run `land` (or at minimum `python tools/claims.py release-active`) even on a
+stopped or failed batch, so claims do not go stale.
+
+## Loop economics (upgraded 2026-07-01)
+
+- **abverify.py now prints the per-instruction diff on NOMATCH** (mismatching words
+  only, capped at 32 lines, reloc slots wildcarded) plus a final
+  `NOMATCH divergences=N/words` line. Agents converge on the exact wall instead of
+  guessing blind; before this they only got a byte count.
+- **The fan-out prompt enforces early stop**: if divergences do not improve for 2
+  consecutive attempts, the agent reports its best attempt and quits. Floor residuals
+  (pure ordering, base-materialization) are named in the prompt so agents do not grind
+  them. This is what keeps tokens/landed down as a band drains.
+- **Near-misses are captured end to end**: the schema requires the lowest-divergence
+  source + its divergence count from every agent, sched_run returns them as
+  `nearMisses`, and bank_run ingests them into nearmiss/db.jsonl and writes real
+  divergence counts into nonmatching.jsonl. Nothing close is ever discarded.
+- Agents within ~6 divergences are told to read notes/pret-idioms.md and
+  notes/mwccarm-codegen.md (the full idiom catalogue) before giving up - on-demand,
+  so easy functions never pay that context cost.
+
+## The refine tier (near-miss backlog -> matches)
+
+When fresh bands run dry, the committed near-miss DB is the other paid vein: stored
+compiling drafts a few instructions off. The refine specialist fixes STRUCTURAL residuals
+the permuter cannot (branch/store order, loop form, && chains, arithmetic idiom, load
+width, push-set). Validated: 49 recovered at ~100K tok/landed on the backlog.
+
+```sh
+python tools/crackloop.py refine --max-div 6 --limit 20   # category-routed export, prints launch line
+# Workflow({ scriptPath: "tools/refine_run.js", args: <names[]> })
+python tools/crackloop.py land --output <task.output> --refine
+```
+
+Routing (tools/refine_wl.py, cached in progress/nm_categories.json): structural
+categories -> refine agents; "register allocation" / "instruction reorder" -> permuter
+(tools/permuter); "base materialization / addressing" -> floor, skipped. One refine shot
+per draft (progress/refine_attempted.txt); improved drafts flow back into the DB for the
+permuter / hand-fix tiers. Do NOT run refine on a fresh fan-out's leftovers - measured
+zero lift there (high-effort fan-out already captures what refine would).
+
+## Pragmas tested, dead end (2026-07-01)
+
+mwccarm 1.2 accepts `#pragma scheduling off` / `#pragma peephole off` silently and they
+change NOTHING (0 divergence changes across 40 closest near-misses x 3 variants). The
+SFA-decomp pragma technique does not transfer; the ordering floor stays hand-fix only.
 
 ## Model choice
 
