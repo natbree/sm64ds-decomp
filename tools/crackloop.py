@@ -50,6 +50,8 @@ def prep(a):
         cd += ["--module", a.module]
     if not a.no_spread:
         cd += ["--spread"]
+    if a.draft:
+        cd += ["--draft"]
     run("coddog.py", *cd)
 
     rows = [json.loads(l) for l in WL.read_text(encoding="utf-8").splitlines() if l.strip()]
@@ -144,6 +146,10 @@ def main():
     p.add_argument("--limit", type=int, default=30)
     p.add_argument("--module", default=None)
     p.add_argument("--no-spread", action="store_true")
+    p.add_argument("--draft", action="store_true",
+                   help="attach m2c semantic drafts to scaffold-less rows "
+                        "(coddog_sim < 0.5, size > 0x300); use for LARGE bands. "
+                        "Needs vendor/m2c (notes/m2c-setup.md)")
     p.set_defaults(fn=prep)
     p = sub.add_parser("refine", help="export closest fixable near-misses for refine_run.js")
     p.add_argument("--max-div", type=int, default=6)
