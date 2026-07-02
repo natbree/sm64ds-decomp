@@ -267,6 +267,39 @@ shows one of these, stop early and report the near-miss:
 Both classes live in nearmiss/db.jsonl at div 1-2; candidates for an asm-block close-out
 (sec 8) if their subsystems ever need completion.
 
+## 6e. Fable-discovered levers (2026-07-01) - walls that turned out to be reachable
+
+A Fable 5 refine batch cracked 5 of 12 drafts that Sonnet 5 (and in one case the
+permuter's ~8k iterations) had exhausted. The working levers, in order of generality:
+
+- **Fake data-dependency forces load/store batching.** The two-word struct-copy floor
+  (target: ld a, ld b, st a, st b; mwccarm: ld/st interleaved) flips with
+  `int a = pair.a; int b = pair.b; dst_a = b ? a : a; dst_b = b;` - the `b ? a : a`
+  read pins b's load before a's store without changing the value, and the coloring
+  follows (func_ov004_020b72d4, previously documented permuter-proof). Store EMISSION
+  order (same regs, stores swapped) is still floor (func_ov004_020b7cd0).
+- **Compile as C++ with a dummy-slot vtable to control the prologue.** Real virtual
+  dispatch (`obj->m(...)` through a struct with N dummy virtuals to hit the right slot)
+  loads the vptr BEFORE homing `this` to a callee-saved register; C function-pointer
+  casts always home first. Cracked func_ov006_020ddeb0 and func_ov004_020b7a18 - use
+  //cpp even for C-looking functions when the prologue order is the wall.
+- **Reassign-before-call blocks copy-propagation.** `dh = (s16)(h - dh); f(&x, dh, ...)`
+  emits the in-place lsl/asr narrowing where casting inside the argument list lets the
+  compiler propagate and reorder (func_ov006_020c201c).
+- **Break out of nested switches to reach the shared epilogue.** Cases that must branch
+  to the function's final epilogue (not a duplicated one): `break` out of BOTH switches
+  and put the tail in an `else` (func_0203fec4, the tail-merge wall from 6d).
+- **`#pragma opt_strength_reduction off` WORKS** (unlike scheduling/peephole, which are
+  ignored): keeps a pointer-induction loop un-reduced so the loop re-computes
+  `add rX,base,rI,lsl #6` each iteration like the ROM (func_ov034_02112020's loop; its
+  remaining gap is first-access-fold). Source-level, committable.
+- **`volatile` array retains stack slots** that plain locals/structs lose to scalar
+  replacement or rematerialization (func_ov102_0214953c).
+
+Still floor after this pass (7/12): zero-offset first-access-fold materialization,
+pre-indexed writeback from plain C, pure register-coloring swaps (~150 variants tried
+on func_ov075_0211a948), and store-emission order.
+
 ## 7. Workflow implications
 
 - **Free tiers first, every cycle:** `clone.py --apply` (byte-identical retarget) then

@@ -55,7 +55,13 @@ STRUCTURAL LEVERS (these fix what the permuter cannot; pick by what the diff sho
 - load width/signedness: u8/s8/u16/s16 local or cast flips ldrb/ldrsb/ldrh/ldrsh
 - push-set / frame off by a register: change how many locals straddle calls - reuse a var, re-emit a global/field inline instead of hoisting it, or reorder the top-of-block C89 declarations (mwccarm allocates in DECLARATION ORDER)
 - register coloring: *(T*)&G vs G[0] access form; materialize a bool (int b=(x==k); if(b)) for movne/moveq
-For the full catalogue read notes/pret-idioms.md and notes/mwccarm-codegen.md.
+- two-word copy batching (ld,ld,st,st): int temps + a fake dependency `dst_a = b ? a : a;` pins the load order without changing the value
+- prologue order (vptr load before homing this): compile as //cpp and call through a REAL vtable struct with dummy virtual slots - C fn-ptr casts always home first
+- blocked narrowing: reassign before the call (`dh = (s16)(h - dh);` as a statement) to stop copy-propagation folding the cast into the arg
+- branch to the SHARED final epilogue from a nested switch: break out of both switches and put the tail in an else
+- pointer-induction loop reduced away: try `#pragma opt_strength_reduction off` above the function (this pragma WORKS; scheduling/peephole are ignored)
+- stack slots optimized away: a volatile array keeps them live
+For the full catalogue read notes/pret-idioms.md and notes/mwccarm-codegen.md (sec 6e has the newest levers).
 
 KNOWN FLOOR - if the residual is a base address the ROM computes into a register (add rX,base,#imm then [rX]) where your C folds it into [base,#imm], or a pure two-word load/store batching order, stop: it is a documented compiler wall. Report your best and finish.
 

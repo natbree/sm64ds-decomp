@@ -110,12 +110,16 @@ SFA-decomp pragma technique does not transfer; the ordering floor stays hand-fix
 
 - **Sonnet 5** is the validated default: parity with Opus 4.8 on matching at ~half the
   cost (see [[sm64ds-sonnet5-ab]]). `sched_run.js` and `refine_run.js` default to it.
-- **Fable 5** (`model:"fable"`, effort `high`): most capable model. Worth it on the HARD
-  residue, where borderline register-coloring near-misses may be reachable with more
-  reasoning. It will NOT move the true codegen floor (materialization / ordering / CSE) --
-  those are model-independent. On the first Fable batch, run a **Fable-vs-Sonnet A/B** on the
-  same hard-residue names to measure whether the extra capability (and 3.3x cost) converts
-  enough extra matches to justify it. If the lift is small, keep Sonnet 5.
+- **Fable 5** (`model:"fable"`, effort `high`): MEASURED 2026-07-01 on the exact 12
+  lowest-divergence drafts Sonnet had exhausted (Sonnet: 0/12 in its own batch):
+  **Fable 5/12 at ~108K tok/landed** - the same per-landed cost as Sonnet on the EASY
+  head, converting functions Sonnet cannot. It cracked a documented permuter-proof
+  two-word-batching residual and two prologue-order walls, and discovered new levers
+  (now in notes/mwccarm-codegen.md sec 6e and the refine_run.js prompt). STANDING TIER:
+  after a Sonnet refine batch drains the head, run a **Fable mop-up** on its misses
+  (same wl_refine.jsonl, `{names:[...], model:"fable", effort:"high"}`). What Fable
+  also could not move (7/12): first-access-fold materialization, pre-indexed writeback,
+  pure register-coloring swaps, store-emission order - that is the REAL floor.
 
 ## Reading the hit rate (why it decays, what to do)
 
