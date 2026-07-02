@@ -136,6 +136,11 @@ virtual methods are fine - we only `-c` compile, never link; only the vtable lay
   ```
   CW also has a split form `add r0,r0,#OFF; ldr rV,[r0]` - it picks per offset; both come from
   the same C++.
+  **Never emulate a vtable call in C (2026-07-02, func_ov006_0210d1fc, Fable):** the C
+  form (`(*(fn**)(*(int*)obj + 0x48))(obj, 3)`) always HOISTS the vtable load off the
+  object register; only a real `//cpp` virtual call (`((Obj*)c)->m48(3)`) produces the
+  `mov r0,r4; ldr r2,[r0]` this-temp shape. If a diff shows the vtable load reading
+  from r0 (the this-copy) instead of the object's home register, switch to real C++.
 - **Pointer-to-member-function (PMF) call** has a fixed ARM ABI prologue:
   `ldr r3,[r0,#OFF]; ldr r1,[r3,#4]; add r0,r0,r1,asr#1; ands r1,r1,#1; ldrne...; blx`.
   Source: `PMF* p = c->pp [+ N/8]; (c->**p)();` with `typedef void (C::*PMF)();`. The
@@ -403,6 +408,26 @@ re-load (`[dst+0x20]` reloaded per arm, no reuse of the cmp value).
 **Mutable-variable subtraction beats the rsb const-fold (2026-07-02, same batch,
 func_ov004_020b3cb8, Opus):** `v = K - x` const-folds to `rsb`; writing
 `int v = K; v -= x;` forces the ROM's `mov rX,#K; sub` pair.
+
+**Two Opus-declared floors cracked by Fable retry (2026-07-02, 0x400-0x800 batch):**
+
+- **Loop-tail store-emission order** (func_ov004_020b2cb8, div 4, "volatile had zero
+  effect" per Opus): the working combo is volatile store/load + routing the address
+  through the REUSED plain temp + `#pragma opt_strength_reduction off` above the
+  function (the pragma stops the address-as-value form from strength-reducing).
+  Named laundered pointers always mis-colored - only plain temps reach r7.
+- **Register-coloring swap that survives decl-order permutation** (func_ov060_02111f08,
+  div 7): the lever was STORE-ORDER statement permutation inside the block (compute
+  z,y,x; store sp.x,sp.y,sp.z), found by a scripted sweep of store-order perms. When
+  decl-order and compute-order permutation stall on a coloring residual, sweep the
+  STORE order before calling floor - extends the "statement order of first demand"
+  rule (6e) to emission sites.
+- Also (func_ov085_0212c230): passing a constant arg EXPLICITLY (`&data_...` instead
+  of relying on CSE) colors the compare chain; a volatile read on one call arg orders
+  it relative to other volatile reads across a call boundary.
+
+Both cracks took the agent 60+ attempts - on promoted div<=8 drafts the long grind
+can pay (Fable, effort high, retry tier only); do not extend this to fresh fan-out.
 
 **The "pool-load of an immediate-encodable constant" class (6d) was a MISDIAGNOSIS**
 (2026-07-02, func_0201a614): the pool slot is not a constant - it is a SYMBOL ADDRESS
