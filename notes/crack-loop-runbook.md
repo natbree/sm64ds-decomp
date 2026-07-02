@@ -48,6 +48,21 @@ If your local nonmatching.jsonl predates 2026-07-01, prune the poisoned entries 
 drop rows whose reason starts with "fan-out miss" AND divergences == 2 exactly (that
 value was fabricated by the old bank_run; ~33 retryable functions were parked that way).
 
+## After every batch: mine it, then optimize (standing rule)
+
+The levers that broke the walls came out of batch RESULT NOTES, not the batches
+(u64-mask laundering, PMF int-param, two-stage retry). After every land, before or
+with the next launch:
+
+1. Read every agent note, matches AND misses. A lever that worked goes into
+   notes/mwccarm-codegen.md AND the prompt lever lists (refine_run.js / sched_run.js),
+   credited. A repeated new floor shape gets documented so agents stop early on it.
+2. Compare hit rate and tokens/landed against this runbook's numbers for the
+   band/model; on decay, pivot the next prep and update the table here.
+3. If a note reveals anything MECHANICAL (a transform, a misdiagnosis), sweep it
+   across the near-miss DB locally before spending more LLM tokens - the pragma
+   sweep and the u64 sweep each banked matches for zero tokens this way.
+
 ## Loop economics (upgraded 2026-07-01)
 
 - **abverify.py now prints the per-instruction diff on NOMATCH** (mismatching words
