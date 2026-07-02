@@ -179,6 +179,13 @@ SFA-decomp pragma technique does not transfer; the ordering floor stays hand-fix
   (67%) at ~80K tok/landed in 0x400-0x800** including a scaffold-less logic function
   matched from its m2c draft. At ~1.3KB/function this is the best byte-per-token tier
   in the game (~64 tok/byte) - run it FIRST when pushing the code-bytes metric.
+  Round 2 decayed to 7/16 (44%) at 150K: the big __sinit initializers inside it stay
+  ~100% (5/5) but the big LOGIC functions are hard for Sonnet - consider routing the
+  low-sim large logic functions to Fable once the sinit vein drains.
+- **Fable 0x140-0x280 round 2: 16/16 (100%) at 64K/landed** - zero decay, the star
+  lane. The u64 laundering idiom carried 6 of 16; one agent reached for asm{} on a
+  pooled-offset RMW and pure C (laundering + encoding-forced split) reproduced it -
+  no asm needed, repo stays asm-free for game logic.
 
 ## Reading the hit rate (why it decays, what to do)
 

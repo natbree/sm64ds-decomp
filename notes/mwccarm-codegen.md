@@ -350,6 +350,23 @@ conditions case-by-case; the categorizer was right. The class is RETIRED from pa
 refine attempts - remaining paths are the asm escape hatch (policy pending) or
 reversing mwccarm's fold heuristic directly.
 
+**Laundering CAVEAT (2026-07-02 big-band batch): inside a loop, the laundered address
+gets hoisted as loop-invariant** - mwccarm materializes it ONCE before the loop where
+the ROM re-derives it per iteration, breaking more than it fixes (func_ov073_0211f61c's
+do-while counter). Launder only straight-line/per-branch sites; for in-loop RMW walls
+report the near-miss.
+
+**Struct copies: match the ROM's INTERLEAVE, both directions (2026-07-02).** Whole-struct
+assignment (dst[i] = src;) emits interleaved load/store pipelining (or ldm/stm); field-by-
+field emits load-batch-then-store-batch. Pick by what the target shows: Ent{int,int}
+arrays needed whole-struct (__sinit_ov006_02132970), Vector3 copies usually need
+field-wise (multiple matches). Neither is universally right.
+
+**Two more coloring levers (2026-07-02, 16/16 Fable batch):** adding a THIRD named temp
+for an arg build (w = y + 0x78000) rotates the r0/r1/r2 assignment; and placing a
+copy-through-direct-expression BEFORE a saved= assignment makes CSE spill its temp
+pre-writeback (func_ov073_021215cc, func_ov102_0214ae1c).
+
 **RETIREMENT LIFTED (2026-07-02): the u64-mask laundering idiom IS the lever.**
 `*(int *)(((int)base + 0xOFF) & 0xFFFFFFFFFFFFFFFF) |= x` forces the materialized
 `add rX, base, #OFF` + `[rX]` form - the identity AND routes the address through
