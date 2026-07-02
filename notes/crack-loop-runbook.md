@@ -104,6 +104,23 @@ So: run ONE refine batch on the closest drafts after fresh batches replenish the
 stop - depth does not pay. The consolation prize of a deep batch is diagnosis: misses come
 back floor-labeled and several drafts get improved in place.
 
+## LARGE functions (0x400+): m2c semantic drafts (2026-07-01)
+
+The 0x400+ tier (221 functions) rarely has a close matched sibling, so its rows arrive
+scaffold-less (coddog_sim < 0.5). `--draft` on prep attaches a free m2c semantic C
+draft to exactly those rows and abrow.py prints it to the agent ("m2c semantic
+draft" block). The draft is gcc-flavored pseudo-C - control flow, resolved callees,
+field offsets - a comprehension scaffold, NOT a matching candidate. Zero tokens,
+~1s/function, validated 25/25 on an unmatched 0x400-0x113c sample.
+
+```sh
+python tools/crackloop.py prep --min 0x400 --max 0x800 --limit 24 --draft
+# standalone: python tools/m2c_draft.py --name func_0206a928
+```
+
+Needs a local `git clone https://github.com/matt-kempster/m2c vendor/m2c` (gitignored).
+Details, dialect notes, and caveats: notes/m2c-setup.md.
+
 ## Pragmas tested, dead end (2026-07-01)
 
 mwccarm 1.2 accepts `#pragma scheduling off` / `#pragma peephole off` silently and they

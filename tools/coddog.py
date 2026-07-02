@@ -124,6 +124,11 @@ def main():
     ap.add_argument("--spread", action="store_true", help="round-robin modules instead of best-first global")
     ap.add_argument("--explain", default=None, help="print one function's closest matched siblings, then exit")
     ap.add_argument("--out", default=None, help="write worklist JSONL (fuzzy-scheduled). omit = summary only")
+    ap.add_argument("--draft", action="store_true",
+                    help="attach an m2c semantic C draft (row['m2c_draft']) to rows with "
+                         "coddog_sim < 0.5 and size > 0x300 -- the big low-similarity "
+                         "functions where no matched sibling scaffold exists. Runs "
+                         "vendor/m2c per row, so the worklist build gets slower.")
     args = ap.parse_args()
     if args.module == "main":       # accept either vocabulary; labels here use "arm9"
         args.module = "arm9"
@@ -201,6 +206,15 @@ def main():
                     ex.append({"name": m["name"], "c_source": src})
             if ex:
                 row["examples"] = ex
+            if args.draft and best < 0.5 and u["size"] > 0x300:
+                import m2c_draft as M2CD
+                try:
+                    row["m2c_draft"] = M2CD.draft(
+                        u["name"], u["addr"], u["tgt"], relocs, gsyms,
+                        window=mod["bin"].read_bytes()[u["addr"] - mod["base"]:
+                                                       u["addr"] - mod["base"] + u["size"] + 0x400])
+                except Exception as e:
+                    sys.stderr.write(f"  m2c draft failed for {u['name']}: {e}\n")
             f.write(json.dumps(row) + "\n")
             written += 1
     sys.stderr.write(f"wrote {written} fuzzy-scheduled rows -> {args.out}  ({time.time()-t0:.1f}s)\n")

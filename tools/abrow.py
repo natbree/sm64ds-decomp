@@ -41,6 +41,10 @@ for ex in row.get("examples", []):
     print(f"\nmatched sibling scaffold {ex['name']}:")
     for ln in ex["c_source"].splitlines():
         print(f"    {ln}")
+if row.get("m2c_draft"):
+    print("\nm2c semantic draft (gcc-flavored, NOT matching - use as a comprehension scaffold only):")
+    for ln in row["m2c_draft"].splitlines():
+        print(f"    {ln}")
 if row.get("draft"):
     print(f"\nstored near-miss draft ({row.get('draft_divergences', '?')} instruction(s) off, "
           f"category: {row.get('category', '?')}) - START FROM THIS:")
