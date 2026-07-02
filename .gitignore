@@ -57,6 +57,7 @@ vendor/
 
 # local-only, never commit
 tools/claims_key.txt
+tools/claims_handle.txt
 /scratchpad/
 
 # coddog fan-out scratch (agents write candidates here)
