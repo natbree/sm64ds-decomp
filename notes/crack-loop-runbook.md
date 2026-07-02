@@ -1,7 +1,7 @@
 # Crack-loop runbook (coddog fan-out)
 
-The whole matching loop in commands. State as of this writing: **66.7% matched
-(7,593 / 11,390)**, goal 70% (7,973). All tooling below is committed, so any fresh
+The whole matching loop in commands. State as of this writing: **66.9% matched
+(7,624 / 11,390)**, goal 70% (7,973). All tooling below is committed, so any fresh
 session or the coworker can run it straight from a clone.
 
 ## One batch = three commands
@@ -44,6 +44,9 @@ catches a wrong same-shaped callee the wildcarded oracle cannot see). Only close
 compiling misses (divergences <= 12) are parked into nonmatching.jsonl; a function that
 merely failed the run falls back into the scheduling pool. `prep` refuses to rebuild the
 worklist while a batch is in flight (progress/claims_active.json present).
+If your local nonmatching.jsonl predates 2026-07-01, prune the poisoned entries once:
+drop rows whose reason starts with "fan-out miss" AND divergences == 2 exactly (that
+value was fabricated by the old bank_run; ~33 retryable functions were parked that way).
 
 ## Loop economics (upgraded 2026-07-01)
 
