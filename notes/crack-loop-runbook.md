@@ -155,7 +155,15 @@ SFA-decomp pragma technique does not transfer; the ordering floor stays hand-fix
   reasoning, the documented "reverse-engineer the original author's C" wall). Cost per
   landed is at parity with Sonnet on easy fresh bands. The 3 misses were all retired
   floor classes. Default for mid-band batches is now `model:"fable"`; the remaining
-  mid-band residue is open again.
+  mid-band residue is open again. Round two held 12/16 (75%) at 49K.
+- **0x140-0x280 is ALSO Fable territory (measured 2026-07-02): 10/12 (83%) at
+  ~66K tok/landed** - that band was only ever drained for Sonnet, and it holds the
+  single biggest unmatched byte pool (~427KB). The u64 laundering idiom carried five
+  of the ten. Byte-cost ~146 tok/byte.
+- **The LARGE band converts on SONNET with m2c drafts (measured 2026-07-02): 8/12
+  (67%) at ~80K tok/landed in 0x400-0x800** including a scaffold-less logic function
+  matched from its m2c draft. At ~1.3KB/function this is the best byte-per-token tier
+  in the game (~64 tok/byte) - run it FIRST when pushing the code-bytes metric.
 
 ## Reading the hit rate (why it decays, what to do)
 
