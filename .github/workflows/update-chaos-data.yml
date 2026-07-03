@@ -49,3 +49,17 @@ jobs:
           git add chaos-db.json
           git commit -m "Refresh Chaos Viewer data from $(git -C .. rev-parse --short HEAD)"
           git push origin chaos-data
+      - name: Regenerate treemap (README SVG + Pages HTML)
+        run: python tools/treemap.py --from-db _chaos_data/chaos-db.json --out docs/index.html --svg docs/progress-treemap.svg
+      - name: Commit treemap if changed
+        # safe from retrigger loops: no workflow watches docs/**
+        run: |
+          if git diff --quiet -- docs/index.html docs/progress-treemap.svg; then
+            echo "treemap unchanged"; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html docs/progress-treemap.svg
+          git commit -m "Refresh progress treemap"
+          git pull --rebase origin main
+          git push origin main

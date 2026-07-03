@@ -7,10 +7,9 @@ name: Update progress bar
 # committed data: config/**/symbols.txt (every declared function) cross-
 # referenced against which of those names have a src/<name>.c[pp] file.
 #
-# Does NOT regenerate the treemap (docs/index.html, docs/progress-treemap.svg)
-# - that needs extracted/ files derived from a ROM dump, which never exists on
-# a hosted runner. Refresh the treemap locally with `python tools/treemap.py
-# --out docs/index.html --svg docs/progress-treemap.svg` and commit it by hand.
+# The treemap (docs/index.html, docs/progress-treemap.svg) is refreshed by the
+# update-chaos-data workflow, which renders it from the CI-generated
+# chaos-db.json (tools/treemap.py --from-db), so no ROM is needed.
 
 on:
   push:

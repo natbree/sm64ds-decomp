@@ -24,9 +24,8 @@ import pathlib
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-import modules as MOD
-import sweep as SW
-import ledger as L
+# modules/sweep/ledger need extracted/ ROM files and the local ledger; they are
+# imported lazily inside main() so --from-db (the CI path) works without a ROM.
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
 
@@ -42,8 +41,30 @@ TEXT = "#e6e7e9"
 SUBTEXT = "#a8abb0"
 
 
+def gather_from_db(db_path):
+    """Same structure as gather(), but sourced from a chaos-db.json produced by
+    tools/chaos_db_ci.py - committed data only, so CI can render the treemap."""
+    import json
+    db = json.loads(pathlib.Path(db_path).read_text(encoding="utf-8"))
+    by_mod = {}
+    for f in db["functions"]:
+        by_mod.setdefault(f["module"], []).append(f)
+    mods = []
+    for label in sorted(by_mod):
+        recs = [{"name": f["name"], "addr": f["addr"], "size": f["size"],
+                 "matched": f["matched"]} for f in sorted(by_mod[label], key=lambda f: f["addr"])]
+        m_bytes = sum(r["size"] for r in recs)
+        done = [r for r in recs if r["matched"]]
+        mods.append({"label": label, "recs": recs, "bytes": m_bytes,
+                     "done_bytes": sum(r["size"] for r in done),
+                     "done_n": len(done), "n": len(recs)})
+    return mods
+
+
 def gather():
     """All records as dicts plus per-module aggregates."""
+    import modules as MOD
+    import sweep as SW
     mods = []
     for mod in MOD.modules():
         label = "arm9" if mod["name"] == "main" else mod["name"]
@@ -338,10 +359,16 @@ def main():
                     help="interactive HTML output path")
     ap.add_argument("--svg", default=None,
                     help="also emit a standalone static SVG (for the README image)")
+    ap.add_argument("--from-db", default=None,
+                    help="render from a chaos-db.json (no ROM or ledger needed; the CI path)")
     args = ap.parse_args()
 
-    GATHER_DONE = L.matched_set()        # green = byte-exact matches ONLY
-    mods = gather()
+    if args.from_db:
+        mods = gather_from_db(args.from_db)
+    else:
+        import ledger as L
+        GATHER_DONE = L.matched_set()    # green = byte-exact matches ONLY
+        mods = gather()
     out_path = pathlib.Path(args.out)
     rc, dn, tn, db, tb, fp, bp = render(mods, out_path)
     print(f"wrote {out_path}")
