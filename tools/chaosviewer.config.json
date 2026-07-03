@@ -12,5 +12,5 @@
   "rules": "only your own legally dumped ROM; never commit the ROM, its assets, or extracted binaries - the one deliberate exception is the annotated disassembly TEXT of still-unmatched functions, published in the coordination data (chaos-data branch) so contributors can work, the same practice as decomp repos committing .s files; import struct/field knowledge (see CREDITS.md) but write all C from scratch.",
   "discord": "https://discord.gg/JXckvdARc",
   "claimsApi": "https://belongto.us/api/claims",
-  "claimsAuthUrl": "https://belongto.us/api/claims/auth/github/start"
+  "claimsAuthUrl": "https://belongto.us/auth/github/start"
 }
