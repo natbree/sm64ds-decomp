@@ -321,6 +321,29 @@ pre-indexed writeback from plain C (but see 6g 2026-07-02: escaped-array alias +
 laundering can fuse into writeback), pure register-coloring swaps (~150 variants tried
 on func_ov075_0211a948), and store-emission order.
 
+Additions from the 2026-07-04/05 overnight runs (credit: Fable refine agents):
+
+- **Call-bearing loops: struct-member access defeats address hoisting.** With cast-arith
+  field reads (`*(int*)((char*)c + K)`) inside a loop that makes calls, mwccarm hoists
+  the loop-invariant address into a spare callee-saved register in the preheader
+  (`add rX, base, #K`); real struct-member access folds into the addressing mode at each
+  use instead. Pair with `#pragma opt_common_subs off` when cross-call slot-address CSE
+  persists (func_ov078_02125350).
+- **`#pragma opt_propagation off` + a live constant local flips whole-function regalloc.**
+  The pragma is honored (unlike scheduling/peephole); introducing `int base = 2` under it
+  kept the constant live in r8 across a loop AND rotated the entire allocation to the ROM
+  shape - single-shot fix from a 28-div draft (func_ov039_021112a0). Also the only known
+  breaker for pure-constant folds the u64-mask launder cannot touch (func_ov015_021114f0).
+- **Vary the launder spelling per block to stop cross-call CSE.** Repeating the identical
+  u64-mask expression in two blocks invites mwccarm to hoist the shared computation above
+  the call; spelling the mask differently per block (zero-extend vs sign-extend placement)
+  keeps each materialization local (func_ov090_02131b94).
+- **Reloc-split trap (link gate, not codegen):** a byte-perfect single-array draft can
+  still be WRONG-DEST if the ROM pools TWO nearby symbol addresses (parallel halfword
+  arrays 2 bytes apart) where the draft uses one base + folded offsets. Restructuring to
+  two externs changes codegen (worse); class is parked for hand-modeling
+  (func_ov007_020b8ec0, needs 0x0208eeec AND 0x0208eeee pooled).
+
 ## 6f. The pragma space, exhaustively characterized (2026-07-01)
 
 Swept 20 CodeWarrior pragmas x all 96 div<=4 near-misses (1,920 compiles). Verdict:
