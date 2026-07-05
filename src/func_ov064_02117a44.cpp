@@ -1,7 +1,4 @@
 //cpp
-// NONMATCHING: base materialization / addressing (div=14). Logic verified correct vs ROM; not
-// byte-matchable from C at mwccarm 1.2/sp2p3 (see notes/matching-style.md).
-// Counts as decompiled, not matched.
 struct Vector3 { int x, y, z; };
 extern "C" {
 void _ZN5Actor9UpdatePosEP12CylinderClsn(char* self, void* c);
@@ -26,13 +23,13 @@ extern "C" int func_ov064_02117a44(char* c) {
     *(int*)(c+0x64) = *(int*)(c+0x350);
     r = 1;
     if (*(unsigned char*)(c+0x33b) == 1) {
-      (*(int*)(c+0x344))++;
+      ++*(int*)(((int)c + 0x344) & 0xFFFFFFFFFFFFFFFF);
       if (*(int*)(c+0x344) >= *(int*)(c+0x340)) {
         *(int*)(c+0x344) = *(int*)(c+0x340) - 2;
         r = -1;
       }
     } else {
-      (*(int*)(c+0x344))--;
+      --*(int*)(((int)c + 0x344) & 0xFFFFFFFFFFFFFFFF);
       if (*(int*)(c+0x344) < 0) {
         *(int*)(c+0x344) = r;
         r = -1;

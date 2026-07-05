@@ -1,6 +1,3 @@
-// NONMATCHING: register allocation (div=14). Logic verified correct vs ROM; not
-// byte-matchable from C at mwccarm 1.2/sp2p3 (see notes/matching-style.md).
-// Counts as decompiled, not matched.
 extern void MultiCopy_Int(int *dst, int *src, int len);
 struct S;
 extern struct S *func_ov007_020c2c68(int a, int len, int b);
@@ -9,8 +6,10 @@ extern void func_ov007_020c26fc(struct S *s);
 struct S { int f0; int f4; char pad8[0x18]; int f20; int f24; int f28; int f2c; };
 struct S *func_ov007_020c2a04(struct S *src, int start, int end)
 {
-    int n = end - start + 1;
-    struct S *d = func_ov007_020c2c68(src->f0, n, src->f4);
+    struct S *d;
+    int n;
+    n = end - start + 1;
+    d = func_ov007_020c2c68(src->f0, n, src->f4);
     *(short*)((char*)d + 8) = n;
     switch (src->f0) {
     case 0:

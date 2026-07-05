@@ -1,7 +1,4 @@
 //cpp
-// NONMATCHING: base materialization / addressing (div=17). Logic verified correct vs ROM; not
-// byte-matchable from C at mwccarm 1.2/sp2p3 (see notes/matching-style.md).
-// Counts as decompiled, not matched.
 extern "C" {
 extern unsigned char data_0209f2bc;
 extern unsigned char data_0209f2c4;
@@ -37,7 +34,7 @@ void HUD::UpdateVsTimer()
     if (data_ov002_02111188 == 0)
     {
         data_ov002_02111188 = 0xb4;
-        q = (unsigned short *)((char *)this + 0x60);
+        q = (unsigned short *)(((int)this + 0x60) & 0xFFFFFFFFFFFFFFFFULL);
         *q = *q - 1;
         v = *(unsigned short *)((char *)this + 0x60);
         if (v <= 3 && v != 0)
@@ -55,7 +52,7 @@ void HUD::UpdateVsTimer()
         return;
     if (*(unsigned short *)((char *)this + 0x66) < 0x30)
     {
-        q = (unsigned short *)((char *)this + 0x66);
+        q = (unsigned short *)(((int)this + 0x66) & 0xFFFFFFFFFFFFFFFFULL);
         *q = *q + 4;
     }
     else
