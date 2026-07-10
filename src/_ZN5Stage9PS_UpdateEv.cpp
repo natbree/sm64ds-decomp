@@ -19,12 +19,12 @@
  *      direct read no longer drops slot's r6 coloring.
  *
  * Residual (2 words, +0x7ac/+0x7b0): case-1 preheader emits ldr r4(&f238)
- *   before ldr sb(&de8); ROM emits sb first (registers themselves MATCH).
- *   Emission order is graph-canonical: statement order, decl order/scope,
- *   extern order, symbol names, DE8P spelling, loop form, explicit reg-ptr
- *   anchors all leave it fixed (explicit anchors schedule the ldr too early,
- *   above mov fp). Standalone repro: scratch/mini.cpp; permuter work dir
- *   vendor/decomp-permuter/work/mini_pre (target = pair swapped, base 20).
+ *   before ldr sb(&de8); ROM emits sb first. Colors MATCH (r5=f2c8,r4=f238,
+ *   sb=de8); pool layout MATCH; body of case1 MATCH including interleaved
+ *   f238-store-before-f2c8-store. Pure independent-ldr schedule residual.
+ *   Named-ptr assigns can get symbol order f2c8,de8,f238 but steal high regs
+ *   and/or fire before mov fp. Direct globals keep colors+placement but always
+ *   emit f238 before de8. See scratch/HANDOFF_Stage_PS_Update.md.
  */
 typedef unsigned char u8;
 typedef unsigned short u16;
