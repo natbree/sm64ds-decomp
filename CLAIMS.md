@@ -20,6 +20,7 @@ it is fair to take over: ping the claimant first.
 | Range | Who | Claimed | Status |
 |---|---|---|---|
 | _example: ov004 0x020b0000-0x020b8000_ | _handle_ | _2026-06-17_ | _example_ |
+| ov077: 021241ac (0x021241ac), 021243c0 (0x021243c0), 021256b4 (0x021256b4), 02125bb4 (0x02125bb4), 02126300 (0x02126300), 0212679c (0x0212679c) | lunavyqo | 2026-07-10 | done - verified byte-identical, PR #232 open |
 | AI-assisted crack sweep: smallest untried funcs (~0x100 band), spread across modules (this batch mostly ov006/ov007) | beansntoast (AI-assisted) | 2026-06-29 | in progress |
 | ov002 __sinit_ov002_021019d0 (0x021019d0, size 0x5470) | Cursor/Grok | 2026-07-02 | done |
 | ov001 func_ov001_020ab550 (0x020ab550, size 0x60) | Cursor/Grok | 2026-07-02 | done |
