@@ -1,44 +1,40 @@
-//cpp
-// NONMATCHING: different op / idiom (div=81). Logic verified correct vs ROM; not
-// byte-matchable from C at mwccarm 1.2/sp2p3 (see notes/matching-style.md).
-// Counts as decompiled, not matched.
-extern "C" void func_ov066_021166c8(void *thiz);
-extern "C" void func_ov066_02116ac4(void *thiz, int a1);
-extern "C" void func_ov066_021165cc(void *thiz);
-extern "C" void func_02012694(int size, void *p);
-extern "C" void func_ov066_021164ec(void *thiz);
-extern "C" int func_ov066_02116390(void *thiz);
-extern "C" int func_ov066_0211603c(void *thiz);
-extern "C" int _ZN9Animation8FinishedEv(void *self);
-extern "C" void func_ov066_021162e8(void *thiz);
-extern "C" int _ZN16MeshColliderBase9IsEnabledEv(void *self);
-extern "C" void _ZN16MeshColliderBase7DisableEv(void *self);
-extern "C" void _ZN18MovingMeshCollider7SetFileEP8KCL_FileRK9Matrix4x35Fix12IiEsR10CLPS_Block(
+/* candidate for func_ov066_02118188 */
+extern void func_ov066_021166c8(void *thiz);
+extern void func_ov066_02116ac4(void *thiz, int a1);
+extern void func_ov066_021165cc(void *thiz);
+extern void func_02012694(int size, void *p);
+extern void func_ov066_021164ec(void *thiz);
+extern int func_ov066_02116390(void *thiz);
+extern int func_ov066_0211603c(void *thiz);
+extern int _ZN9Animation8FinishedEv(void *self);
+extern void func_ov066_021162e8(void *thiz);
+extern int _ZN16MeshColliderBase9IsEnabledEv(void *self);
+extern void _ZN16MeshColliderBase7DisableEv(void *self);
+extern void _ZN18MovingMeshCollider7SetFileEP8KCL_FileRK9Matrix4x35Fix12IiEsR10CLPS_Block(
     void *self, void *kcl, void *mtx, int fix, short s, void *clps);
-extern "C" void func_020393d4(void *p, void *v);
-extern "C" void func_020393c4(void *p, void *v);
-extern "C" void func_020398fc(void *p);
-extern "C" void _ZN16MeshColliderBase6EnableEP5Actor(void *self, void *actor);
-extern "C" int func_ov066_02119454(void *c, void *pmf);
+extern void func_020393d4(void *p, void *v);
+extern void func_020393c4(void *p, void *v);
+extern void func_020398fc(void *p);
+extern void _ZN16MeshColliderBase6EnableEP5Actor(void *self, void *actor);
+extern int func_ov066_02119454(void *c, void *pmf);
 
 extern unsigned char data_ov066_0211ae0c;
 extern unsigned char data_ov066_0211ae08;
 extern unsigned char data_ov066_0211abe0;
-extern void **data_ov066_0211ae14;
-extern void **data_ov066_0211aeac;
+extern char data_ov066_0211ae14[];
+extern char data_ov066_0211aeac[];
 extern unsigned char data_ov066_0211ae04;
-extern void *data_ov066_0211b06c;
-extern void func_02112c08();
-extern void func_02112d48();
-extern void _ZN16MeshColliderBase22UpdatePosWithTransformERS_P5ActorR10ClsnResultR7Vector3P10Vector3_16S8_();
-extern void func_ov066_0211a35c();
+extern char data_ov066_0211b06c;
+extern int func_02112c08;
+extern int func_02112d48;
+extern int _ZN16MeshColliderBase22UpdatePosWithTransformERS_P5ActorR10ClsnResultR7Vector3P10Vector3_16S8_;
+extern int func_ov066_0211a35c;
 
-extern "C" int func_ov066_02118188(void *thiz)
+int func_ov066_02118188(void *thiz)
 {
-    unsigned char *c = (unsigned char *)thiz;
-    int state = *(int *)(c + 0x4a0);
+    char *c = (char *)thiz;
 
-    switch (state) {
+    switch (*(int *)(c + 0x4a0)) {
     case 0:
         if (*(unsigned short *)(c + 0x4d0) != 0)
             break;
@@ -69,16 +65,17 @@ extern "C" int func_ov066_02118188(void *thiz)
         break;
 
     case 2:
-        if (*(int *)(c + 0x498) == 1 && data_ov066_0211ae08 != 0) {
-            if (*(int *)(c + 0x494) > 0x14) {
-                *(int *)(c + 0x494) = 0;
-                func_ov066_021165cc(c);
-                *(int *)(c + 0x4a0) = 4;
-                break;
+        if (*(int *)(c + 0x498) == 1) {
+            if (data_ov066_0211ae08 != 0) {
+                if (*(int *)(c + 0x494) > 0x14) {
+                    *(int *)(c + 0x494) = 0;
+                    func_ov066_021165cc(c);
+                    *(int *)(c + 0x4a0) = 4;
+                    break;
+                }
+                *(int *)(((int)c + 0x494) & 0xFFFFFFFFFFFFFFFF) += 1;
             }
         }
-
-        *(int *)(c + 0x494) = *(int *)(c + 0x494) + 1;
 
         if ((unsigned short)(*(int *)(c + 0x3b8) >> 0xc) == 0) {
             func_02012694(0x140, c + 0x74);
@@ -116,16 +113,16 @@ extern "C" int func_ov066_02118188(void *thiz)
 
         if (*(int *)(c + 0x49c) == 1) {
             _ZN18MovingMeshCollider7SetFileEP8KCL_FileRK9Matrix4x35Fix12IiEsR10CLPS_Block(
-                c + 0x674, ((void **)&data_ov066_0211ae14)[1], c + 0x83c, 0x199,
-                *(short *)(c + 0x8e), (void *)func_02112c08);
+                c + 0x674, *(void **)(data_ov066_0211ae14 + 4), c + 0x83c, 0x199,
+                *(short *)(c + 0x8e), &func_02112c08);
         } else {
             _ZN18MovingMeshCollider7SetFileEP8KCL_FileRK9Matrix4x35Fix12IiEsR10CLPS_Block(
-                c + 0x674, ((void **)&data_ov066_0211aeac)[1], c + 0x83c, 0x199,
-                *(short *)(c + 0x8e), (void *)func_02112d48);
+                c + 0x674, *(void **)(data_ov066_0211aeac + 4), c + 0x83c, 0x199,
+                *(short *)(c + 0x8e), &func_02112d48);
         }
 
-        func_020393d4(c + 0x674, (void *)_ZN16MeshColliderBase22UpdatePosWithTransformERS_P5ActorR10ClsnResultR7Vector3P10Vector3_16S8_);
-        func_020393c4(c + 0x674, (void *)func_ov066_0211a35c);
+        func_020393d4(c + 0x674, &_ZN16MeshColliderBase22UpdatePosWithTransformERS_P5ActorR10ClsnResultR7Vector3P10Vector3_16S8_);
+        func_020393c4(c + 0x674, &func_ov066_0211a35c);
         func_020398fc(c + 0x674);
         _ZN16MeshColliderBase6EnableEP5Actor(c + 0x674, c);
 
