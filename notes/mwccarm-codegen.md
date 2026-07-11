@@ -644,6 +644,35 @@ cheap, deterministic permutation to try FIRST on any big-function loop that is
 byte-identical except a consistent callee-saved renaming, before reaching for the
 statement-order (6e) or store-order (6g) levers. Now in the sched_run.js prompt.
 
+## 6l. Store-type and magic-divisor levers (2026-07-11 coddog batch 1)
+
+Three levers surfaced cracking the 0x100-0x280 spread band (21/30 landed):
+
+- **Byte-fill of -1: signed store emits `mvn`, unsigned emits `mov #0xff`.** A `-1`
+  written through a *signed* byte pointer (`s8`/`signed char`) compiles to `mvn r3,#0`;
+  the same value through a `u8` pointer compiles to `mov r3,#0xff`. When a reset/fill
+  loop diverges by exactly that one instruction, flip the store type rather than the
+  literal. (func_02068ae8, 1-div -> match.)
+
+- **Reverse-derive the divisor, write the plain `/N`.** When the ROM shows a
+  magic-multiply-plus-shift sequence, do NOT hand-emit the shifts: recover the original
+  constant N from the magic/shift pair (Hacker's-Delight back-computation) and write the
+  literal `x / N`. mwccarm regenerates the identical magic sequence, and small errors in
+  a hand-rolled shift chain are avoided. (func_ov002_020b5c4c, `/2200` and `/1500`.)
+
+- **Named `u16` local forces the `and/lsl/lsrs` narrowing triple over a single `ands`.**
+  Assigning a masked value into a declared `u16` local (then using it) produces the
+  and-then-shift-pair narrowing idiom; doing the mask inline collapses to `ands`. Use the
+  named-local spelling when the target shows the three-instruction narrowing.
+  (_ZN6Player17St_SlideKick_MainEv.)
+
+New floor shapes confirmed (route to permuter/hand-fix, stop grinding from C): the
+**SMULL RdLo/RdHi register swap** and the **mul-destination-register choice** inside
+fixed-point sin/cos matrix-build blocks (func_0204be40, func_0204bbd8), and an
+**address-of hoisting ORDER** floor where N independent `&field` computations are emitted
+in a different but semantically-free order (func_02071d3c) - a sibling of the 6e/6g
+ordering floors, unmoved by decl-order permutation.
+
 ## 7. Workflow implications
 
 - **Free tiers first, every cycle:** `clone.py --apply` (byte-identical retarget) then
