@@ -610,17 +610,17 @@ Cracked `_ZN10SphereClsn10DetectClsnEv` (SphereClsn::DetectClsn, div 16 -> 0, Fa
 floor - the plain floor (register-coloring swap with NO virtual call feeding it) is
 still unreachable and should still be parked.
 
-**Confirmed NOT applicable (2026-07-11):** a symmetric `sb`/`sl` (dst-temp/src-temp)
-coloring swap in an inlined `ldm!/stm!` aggregate-copy loop with NO call in the loop
-body - mwccarm invariantly assigns dst-temp to `sb`, src-temp to `sl` regardless of
-decl order, block-scoped temps, array-subscript form, reference binding, or a
-fake-dependency ternary; applying the 6i call-result scoping trick here made it
-WORSE (div 8 -> 20). This is the genuine plain floor 6i itself warns about - do not
-retry 6i on a writeback-temp swap with no intervening call. (`func_ov055_02111358` /
-`_ZN11MirrorLuigi6RenderEv`, Opus reached div 13 -> 8 via decl reorder (i first, dst
-before src) fixing the OUTER counter/pointer coloring; Fable exhausted 8 attempts on
-the residual inner sb/sl swap with zero further movement - parked in nearmiss/db.jsonl
-at div 8.)
+**Confirmed NOT applicable (2026-07-11), but see 6m:** a symmetric `sb`/`sl`
+(dst-temp/src-temp) coloring swap in an inlined `ldm!/stm!` aggregate-copy loop with
+NO call in the loop body - mwccarm invariantly assigns dst-temp to `sb`, src-temp to
+`sl` regardless of decl order, block-scoped temps, array-subscript form, reference
+binding, or a fake-dependency ternary; applying the 6i call-result scoping trick here
+made it WORSE (div 8 -> 20). Do not retry 6i on a writeback-temp swap with no
+intervening call - the lever that DOES flip it is u64-laundering the DST deref (6m).
+(`func_ov055_02111358` / `_ZN11MirrorLuigi6RenderEv`, Opus reached div 13 -> 8 via
+decl reorder (i first, dst before src) fixing the OUTER counter/pointer coloring;
+Fable exhausted 8 attempts on the residual inner sb/sl swap; later cracked to a full
+MATCH via 6m.)
 
 **Follow-up (2026-07-11, func_ov090_02130f94 MATCHED, div 48 -> 0):** the only other
 ROM instance of the `mov sl,rSRC / mov lr,rDST / ldm sl!/stm sb!` writeback-temp shape
@@ -701,7 +701,31 @@ fixed-point sin/cos matrix-build blocks (func_0204be40, func_0204bbd8), and an
 in a different but semantically-free order (func_02071d3c) - a sibling of the 6e/6g
 ordering floors, unmoved by decl-order permutation.
 
-## 7. Workflow implications
+## 6m. u64-laundering the DST deref flips the aggregate-copy writeback-temp swap (2026-07-11)
+
+The "genuine plain floor" 6i warned about - the symmetric `sb`/`sl` src-temp/dst-temp
+coloring swap in an inlined `ldm!/stm!` aggregate-copy loop with no call in the body -
+is NOT a floor. Laundering the destination pointer through the u64 round-trip flips it:
+
+```c
+/* compiler emits mov sl,<src> / mov sb,<dst> (src-temp gets the HIGHER reg): */
+*dst = *src;
+/* compiler emits mov sb,<src> / mov sl,<dst> (src-temp gets the LOWER reg): */
+*(Mtx*)(int)(((long long)(int)dst) & 0xFFFFFFFFFFFFFFFFLL) = *src;
+```
+
+The laundered dst expression delays the LHS address-temp's vreg creation past the RHS,
+inverting which temp the allocator hands the lower callee-saved register. Everything
+else (loop structure, running-pointer strength reduction, increment scheduling) is
+untouched. Simpler complexity-adders do NOT work - `(int)`, `(char*)`, `(unsigned int)`
+casts and `+ 0` all fold away before allocation; only the full u64 mask round-trip
+(the same laundering idiom as 6h/6j) survives long enough. Laundering the SRC side
+instead does nothing.
+
+Cracked `_ZN11MirrorLuigi6RenderEv` (ov055, div 8 -> MATCH, one shot after a 9-variant
+battery; also the only other instance of this shape in the ROM, `func_ov090_02130f94`,
+is parked on the same swap - retry it with this lever). Try 6m FIRST when the residual
+divergence is exactly the `mov/mov/ldm!/stm!` register pair of a struct-copy loop.
 
 - **Free tiers first, every cycle:** `clone.py --apply` (byte-identical retarget) then
   `paramclone.py --apply` (same skeleton, substituted immediates) - they harvest the families
