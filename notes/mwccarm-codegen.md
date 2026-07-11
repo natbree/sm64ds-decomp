@@ -622,6 +622,22 @@ before src) fixing the OUTER counter/pointer coloring; Fable exhausted 8 attempt
 the residual inner sb/sl swap with zero further movement - parked in nearmiss/db.jsonl
 at div 8.)
 
+**Follow-up (2026-07-11, func_ov090_02130f94 MATCHED, div 48 -> 0):** the only other
+ROM instance of the `mov sl,rSRC / mov lr,rDST / ldm sl!/stm sb!` writeback-temp shape
+needed NO copy-temp intervention at all - a plain `global = *src;` aggregate assign
+colored sb/sl/lr correctly on the first try. The real walls were elsewhere, and the fix
+generalizes: when the target loop has BOTH a surviving multiplicative induction counter
+(`add r4,r4,#3` feeding an mla) AND a scaled access that is NOT reduced (`add
+r0,r7,r6,lsl #2` recomputed on both sides of a call instead of a `+=4` induction var +
+cross-call CSE), turn BOTH `#pragma opt_strength_reduction off` and `#pragma
+opt_common_subs off` on and hand-write the surviving counter as an explicit variable
+(`idx = 6; ... idx += 3;` in the loop) so it outlives the pragma. Either pragma alone
+made it worse (53/14 div); together with the explicit counter: div 6. The last 6 words
+were the 3-word `v = r;` struct copy: struct assign emits ldm/stm (wrong), int temps
+extend live ranges and reorder the loads (wrong); plain per-field `v.x = r.x; v.y =
+r.y; v.z = r.z;` under `opt_common_subs off` emits the batched 3-load/3-store shape
+byte-exact, including reusing the r.z load (r3) for a later stack arg.
+
 ## 6j. Array-subscript indexing defeats a LICM index*scale hoist under EBB-local CSE (2026-07-10)
 
 Companion to 6e's `#pragma opt_common_subs off` master lever. Once the pragma flips CSE
