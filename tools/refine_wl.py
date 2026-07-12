@@ -4,6 +4,8 @@ worklist for the refine specialist (tools/refine_run.js).
 Routing (validated, see notes/crack-loop-runbook.md): structural miss categories go
 to the refine agents; "register allocation" / "instruction reorder" go to the
 permuter; "base materialization / addressing" is the compiler floor and is skipped.
+Entries carrying a "floor" mark (nearmiss_db.py mark-floor: verified compiler-internal
+residual, e.g. a pure scheduler-ordering swap) are excluded entirely.
 Classification compiles each candidate, so results are cached in
 progress/nm_categories.json keyed by (module, addr, divergences) - a re-ingested
 better draft reclassifies automatically.
@@ -78,6 +80,7 @@ def main():
 
     pool = [r for r in rows
             if r.get("divergences") and 0 < r["divergences"] <= args.max_div
+            and not r.get("floor")   # verified compiler-internal residual; hand-fix only
             and r["name"] not in attempted
             and (r["module"], r["addr"]) not in parked
             and (min_size is None or r["size"] >= min_size)

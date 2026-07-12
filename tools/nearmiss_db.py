@@ -8,6 +8,13 @@ instructions). When a better model or a new idiom lands, we start from 95%-done,
 
 The DB lives at nearmiss/db.jsonl (committed, so the work survives). Each record:
   {module, addr, name, size, target_hex, lang, divergences, c_source, source}
+plus an optional "floor" object on entries whose residual is verified compiler-internal:
+  {"class": "ordering", "evidence": "...", "date": "YYYY-MM-DD"}
+Floored entries are excluded from export-close and refine_wl.py by default -- the
+permuter provably cannot flip pure instruction-ordering residuals (see
+notes/mwccarm-codegen.md), so automated tiers stop burning compute on them. They stay
+in the DB as the hand-fix / spelling-hunt backlog; a strictly better ingest replaces
+the record and clears the mark (the residual changed, the floor claim is stale).
 
 Usage:
   python tools/nearmiss_db.py ingest --result <fanout-output.json> --worklist progress/wl.jsonl
@@ -16,6 +23,9 @@ Usage:
   python tools/nearmiss_db.py list --max-div 12
   python tools/nearmiss_db.py export-close --max-div 8 --out progress/close.jsonl   # permuter seeds
   python tools/nearmiss_db.py bank-matches      # re-check every entry; bank any that now score 0
+  python tools/nearmiss_db.py prune-matched     # drop ghosts already matched in committed src/
+  python tools/nearmiss_db.py mark-floor --name <func> --class ordering --evidence "levers tried ..."
+  python tools/nearmiss_db.py unmark-floor --name <func>
 """
 import argparse
 import json
@@ -206,6 +216,9 @@ def stats(args):
     print(f"DB: {len(db)} entries. median divergences={ds[len(ds)//2]}, min={ds[0]}")
     for k, v in b.items():
         print(f"  {k:14} {v}")
+    floored = [r for r in db.values() if r.get("floor")]
+    if floored:
+        print(f"  floored        {len(floored)} (verified compiler-internal residual; hand-fix backlog)")
 
 
 def _list(args):
@@ -214,13 +227,53 @@ def _list(args):
     for r in rows:
         if args.max_div is not None and (r.get("divergences") or 1e9) > args.max_div:
             continue
-        print(f"  div={r.get('divergences'):<4} {r['module']:6} {r['name'][:46]:46} {r['lang']}")
+        if getattr(args, "floor_only", False) and not r.get("floor"):
+            continue
+        tag = f"  FLOOR({r['floor'].get('class', '?')})" if r.get("floor") else ""
+        print(f"  div={r.get('divergences'):<4} {r['module']:6} {r['name'][:46]:46} {r['lang']}{tag}")
+
+
+def mark_floor(args):
+    """Persistently mark entries whose residual is verified compiler-internal (e.g. a
+    pure instruction-ordering swap the scheduler owns). Marked entries drop out of
+    export-close and refine_wl.py; they remain in the DB as the hand-fix backlog."""
+    import datetime
+    names = [n.strip() for n in args.name.split(",") if n.strip()]
+    with locked():
+        db = load_db()
+        hit = 0
+        for r in db.values():
+            if r["name"] in names:
+                r["floor"] = {"class": args.floor_class, "evidence": args.evidence,
+                              "date": str(datetime.date.today())}
+                hit += 1
+        save_db(db)
+    missing = set(names) - {r["name"] for r in db.values() if r.get("floor")}
+    print(f"marked {hit}/{len(names)} as floor({args.floor_class})"
+          + (f"; NOT FOUND: {', '.join(sorted(missing))}" if hit < len(names) else ""))
+
+
+def unmark_floor(args):
+    names = [n.strip() for n in args.name.split(",") if n.strip()]
+    with locked():
+        db = load_db()
+        hit = 0
+        for r in db.values():
+            if r["name"] in names and r.pop("floor", None) is not None:
+                hit += 1
+        save_db(db)
+    print(f"unmarked {hit}/{len(names)}")
 
 
 def export_close(args):
     db = load_db()
     out = [r for r in db.values()
            if r.get("divergences") is not None and 0 < r["divergences"] <= args.max_div]
+    if not getattr(args, "include_floor", False):
+        floored = [r for r in out if r.get("floor")]
+        if floored:
+            print(f"skipping {len(floored)} floored entries (--include-floor to keep)")
+        out = [r for r in out if not r.get("floor")]
     if args.category:
         # category-routed export (permuter wants "register allocation" / "instruction
         # reorder"); uses the classification cache refine_wl.py maintains, classifying
@@ -250,6 +303,33 @@ def export_close(args):
         "".join(json.dumps({"module": r["module"], "addr": r["addr"], "name": r["name"],
                             "c_source": r["c_source"]}) + "\n" for r in out))
     print(f"exported {len(out)} close seeds (div<={args.max_div}) -> {args.out}")
+
+
+def prune_matched(args):
+    """Drop entries whose function already has a committed, CI-validated match in
+    src/ (a src file without a NONMATCHING header). The local matched ledger is
+    often stale on multi-contributor checkouts, so ingest's matched_set() drop
+    misses these; they linger as ghosts and pollute stats and export-close."""
+    import worklist as WL
+    db = load_db()
+    ghosts = [key for key, r in db.items()
+              for text in [WL.read_src_text(r["name"])]
+              if text is not None and "NONMATCHING" not in text[:400]]
+    if args.dry_run:
+        for key in ghosts:
+            r = db[key]
+            print(f"  would drop div={r.get('divergences'):<4} {r['module']:6} {r['name']}")
+        print(f"{len(ghosts)} ghost entries (matched in committed src/)")
+        return
+    with locked():
+        db = load_db()
+        dropped = 0
+        for key in ghosts:
+            if db.pop(key, None) is not None:
+                dropped += 1
+        save_db(db)
+        remaining = len(db)
+    print(f"dropped {dropped} ghost entries (matched in committed src/); DB now {remaining}.")
 
 
 def bank_matches(args):
@@ -297,17 +377,36 @@ def main():
     p = sub.add_parser("ingest"); p.add_argument("--result"); p.add_argument("--seeds")
     p.add_argument("--worklist"); p.add_argument("--label"); p.set_defaults(fn=ingest)
     p = sub.add_parser("stats"); p.set_defaults(fn=stats)
-    p = sub.add_parser("list"); p.add_argument("--max-div", type=int); p.set_defaults(fn=_list)
+    p = sub.add_parser("list"); p.add_argument("--max-div", type=int)
+    p.add_argument("--floor-only", action="store_true",
+                   help="only entries marked as compiler-internal floor")
+    p.set_defaults(fn=_list)
     p = sub.add_parser("export-close"); p.add_argument("--max-div", type=int, default=8)
     p.add_argument("--out", default="progress/close.jsonl")
     p.add_argument("--category", default=None,
                    help="comma list of category substrings to keep (e.g. "
                         "'register allocation,instruction reorder' for permuter seeds)")
+    p.add_argument("--include-floor", action="store_true",
+                   help="keep entries marked as compiler-internal floor (skipped by default)")
     p.set_defaults(fn=export_close)
+    p = sub.add_parser("mark-floor")
+    p.add_argument("--name", required=True, help="function name, or comma list")
+    p.add_argument("--class", dest="floor_class", default="ordering",
+                   help="floor class (ordering, materialization, ...)")
+    p.add_argument("--evidence", required=True,
+                   help="what was tried and why the residual is compiler-internal")
+    p.set_defaults(fn=mark_floor)
+    p = sub.add_parser("unmark-floor")
+    p.add_argument("--name", required=True, help="function name, or comma list")
+    p.set_defaults(fn=unmark_floor)
     p = sub.add_parser("bank-matches")
     p.add_argument("--no-strict", action="store_true",
                    help="skip the reloc-destination gate (bytes-only banking)")
     p.set_defaults(fn=bank_matches)
+    p = sub.add_parser("prune-matched")
+    p.add_argument("--dry-run", action="store_true",
+                   help="list the ghost entries without dropping them")
+    p.set_defaults(fn=prune_matched)
     args = ap.parse_args()
     args.fn(args)
 
