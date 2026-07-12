@@ -4,7 +4,8 @@
     "alexsobolew7": "ruspecial",
     "bmanus2": "tangosdev",
     "noreply": "tangosdev",
-    "leonard.van.der.plaat": "lplaat"
+    "leonard.van.der.plaat": "lplaat",
+    "andrew": "andrewboudreau"
   },
   "overrides": {
     "src/func_02035860.c": "ruspecial",
