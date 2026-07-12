@@ -1,8 +1,8 @@
-// NONMATCHING: instruction scheduling: `*(c+0x346)=0` is hoisted one slot into the `add r1,r1,lsr#31` -> `asr r1,r1,#1` latency gap (the average `>>1`), but the ROM leaves the gap and emits the store after `str [c+0x33c]`. Store-order permutations, launder, fake-dep, and volatile do not stop the hoist. (div=3)
 /* _ZN13UpDownLiftBbh13InitResourcesEv at 0x021365d8 (ov095), size 0x18c
  * Compiler mwccarm 1.2/sp2p3, flags:
- * -O4,p -enum int -lang c99 -char signed -interworking -proc arm946e -gccext,on -msgstyle gcc */
-
+ * -O4,p -enum int -lang c99 -char signed -interworking -proc arm946e -gccext,on -msgstyle gcc
+ * natural signed /2 spelling; mwcc synthesizes add/lsr#31/asr#1 itself and
+ * self-schedules the byte store into the ROM slot */
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef short s16;
@@ -67,12 +67,8 @@ int _ZN13UpDownLiftBbh13InitResourcesEv(char *c)
     *((int *) (c + 0x334)) = *((int *) (c + 0x60));
   }
   *((int *) (c + 0x338)) = (*((int *) (c + 0x334))) - ((*((u16 *) (c + 0x92))) << 12);
-  {
-    int s = (*((int *) (c + 0x334))) + (*((int *) (c + 0x338)));
-    int r = s + ((int) (((unsigned) s) >> 31));
-    *((u8 *) (c + 0x346)) = 0;
-    *((int *) (c + 0x33c)) = r >> 1;
-  }
+  *((int *) (c + 0x33c)) = ((*((int *) (c + 0x334))) + (*((int *) (c + 0x338)))) / 2;
+  *((u8 *) (c + 0x346)) = 0;
   *((u8 *) (c + 0x347)) = 1;
   *((u8 *) (c + 0x348)) = 0;
   *((int *) (c + 0x340)) = 0;
