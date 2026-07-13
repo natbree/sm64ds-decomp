@@ -107,3 +107,4 @@ it is fair to take over: ping the claimant first.
 | ov025 func_ov025_021113f0 (0x021113f0, 0x3ec) | lunavyqo (Grok) | 2026-07-13 | **done** — verified byte-identical |
 | ov079 batch13: 13 Whomp/BulletBill funcs | lunavyqo (Grok) | 2026-07-13 | **done (12/13)** — 12 matched; 02124008 banked div=1 FLOOR(materialization) — notes/func_ov079_02124008-floor.md + nearmiss/db.jsonl |
 | ov009: func_ov009_0211145c, func_ov009_021115d8, _ZN4Bird13InitResourcesEv | lunavyqo (Grok) | 2026-07-13 | **done** — 3 verified byte-identical |
+| ov064 batch11: 8 funcs (15f98,16220,17220,Bully::Behavior,17d24,18760,LavaBubble::InitResources,18ee4) | lunavyqo (Grok) | 2026-07-13 | **done** — 8 verified byte-identical (RotatingFirebar::Behavior, 193b4, 1a4c4 dropped: hand-asm dcd dumps, not matches) |
