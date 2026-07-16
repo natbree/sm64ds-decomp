@@ -984,6 +984,56 @@ Permuter is grinding the remainder; whoever cracks ONE of these cracks all five,
 0x1360 monster (a DFA-table printf: state tables data_0209a0a0/data_0209a130, 0x40-byte
 chunked stream writes through the callback at +0x10, %f via these soft-double helpers).
 
+## 6t. Guard functions with early returns are PLAIN C, not asm-hatch (2026-07-16, natbree PR #387 fallout)
+
+A conditional/early return that the ROM emits as a PREDICATED return -- `addeq sp,sp,#4;
+moveq r0,#0; ldmeq sp!,{lr}; bxeq lr` -- reads like it needs hand asm (per section 8, the
+inline assembler cannot even spell `ldm{cond}`/`bx{cond}`: a `pop {pc}` epilogue has to be
+written `ldr pc,[sp],#4`). It does NOT. Write the guard as a plain C `return;` / `return 0;`
+at `-O4,p` and mwccarm emits the whole predicated conditional return itself. The early-return
+BODY (4 instrs: sp adjust + retval + ldm + bx) is too big for the optimizer to fold, so it
+stays a predicated block that byte-matches the ROM. Asm-hatching these is strictly WORSE --
+the assembler rejects the mnemonics, so you never match.
+
+Proof: `func_02069918` (arm9) matched on main via #388 as plain C --
+```c
+void func_02069918(char *arg0) {
+    u16 v;
+    if (*(u16 *)(arg0 + 2) != 0) return;   // -> cmp; addne sp; ldmne sp!,{lr}; bxne lr
+    v = *(u16 *)(arg0 + 4);
+    if (v == 7) return;
+    if (v == 9) return;
+    if (v != 0x15) return;
+    ...
+}
+```
+natbree submitted `func_02069918` AND `func_02068398` in the (now-closed) PR #387 as
+`asm`-hatched near-misses believing the `ldm{cond}` was unreachable from C. It is reachable;
+`func_02069918` was already solved this way. So: a guard/dispatch function whose only "asm
+tell" is conditional-return encoding is a section-6 C problem, not a section-8 asm one. Reach
+for asm only when the tell is a frame/callee-saved/hand-schedule shape (section 8), not merely
+a predicated return.
+
+RESIDUAL FLOOR (why `func_02068398` still floors in plain C): two sequential guards that both
+branch to a SHARED tail with a one-instruction reassignment before it. The ROM branches BOTH
+guards --
+```
+    beq done          ; if p == 0
+    ldr r0,[r0,#0x4b4]
+    cmp r0,#0
+    beq done          ; if y == 0
+    mov r1,r0         ; sel = y   (unconditional)
+done:
+```
+-- but mwccarm predicates the SECOND guard's `mov` into `movne r1,r0` and merges the branch,
+regardless of phrasing: nested `if`, short-circuit `&&`, goto-pin (6o), reusing `p` for `y`,
+and not-reloading the top-checked value ALL compile to `movne` (div=6, five variants tried).
+The first guard branches (its skip-body is 4 instrs, too big to predicate); only the trailing
+1-instr guard collapses. This is a predication-vs-branch floor in the same family as 6c: hand
+asm branches the middle correctly (div=2) but cannot do the `ldm{cond}` returns, plain C does
+the returns but predicates the middle -- a genuine double-bind. Best banked at div=2 in
+nearmiss/db.jsonl (`func_02068398`, source "natbree (double-guard predication floor)").
+
 ---
 
 *Add to this file whenever you learn a new codegen rule. It is the project's accumulating
