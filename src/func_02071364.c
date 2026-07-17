@@ -54,10 +54,8 @@ void func_02071364(Decimal *result, const Decimal *x, const Decimal *y)
     result->exp = (short)(x->exp + y->exp);
 
     if (accumulator) {
-        short *exp = (short *)(int)(((long long)(int)((char *)result + 2)) &
-                                    0xffffffffffffffffLL);
         *--ip = (unsigned char)accumulator;
-        *exp = *exp + 1;
+        *(short *)((int)((char *)result + 2) & 0xFFFFFFFFFFFFFFFF) += 1;
     }
 
     for (i = 0; i < 32 && ip < ep; i++, ip++) {
